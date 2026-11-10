@@ -22,8 +22,10 @@ self.addEventListener('install', function(event) {
                     '/js/sondehub.js',
                     '/js/app.js',
                     '/js/colour-map.js',
-                    '/js/xdata.js',
-                    '/js/station.js',
+                    '/js/xdata.js', // Professional
+                    '/js/station.js', // Professional
+                    '/js/suncalc.js', // Amateur
+                    '/js/flight_doc.js', // Amateur
                     '/js/format.js',
                     '/js/rbush.js',
                     '/js/pwa.js',
