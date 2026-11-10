@@ -1,3 +1,14 @@
+const sondehubVersions = {
+  PROFESSIONAL: "Professional",
+  AMATEUR: "Amateur",
+};
+function isProfessional() {
+  return sondehubVersion == sondehubVersions.PROFESSIONAL;
+}
+function isAmateur() {
+  return sondehubVersion == sondehubVersions.AMATEUR;
+}
+var sondehubVersion = sondehubVersions.PROFESSIONAL;
 var mission_id = 0;
 var position_id = 0;
 var newdata_url = "https://api.v2.sondehub.org/sondes/telemetry";

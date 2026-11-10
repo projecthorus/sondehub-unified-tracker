@@ -12,6 +12,10 @@ ChaseCar = {
     recovery_uri: "https://api.v2.sondehub.org/recovered",
 };
 
+if (isAmateur()) {
+    ChaseCar.db_uri = "https://api.v2.sondehub.org/amateur/listeners";  // Sondehub API
+}
+
 // Updated SondeHub position upload function.
 // Refer PUT listeners API here: https://generator.swagger.io/?url=https://raw.githubusercontent.com/projecthorus/sondehub-infra/main/swagger.yaml
 // @callsign string
@@ -23,7 +27,7 @@ ChaseCar.updatePosition = function(callsign, position) {
     _position_alt = ((!!position.coords.altitude) ? position.coords.altitude : 0);
 
     var _doc = {
-        "software_name": "SondeHub Tracker",
+        "software_name": isProfessional() ? "SondeHub Tracker" : "SondeHub-Amateur",
         "software_version": document.body.dataset.version,
         "uploader_callsign": callsign,
         "uploader_position": [position.coords.latitude, position.coords.longitude, _position_alt],
@@ -42,7 +46,7 @@ ChaseCar.updatePosition = function(callsign, position) {
     });
 };
 
-
+// Professional Only
 ChaseCar.markRecovered = function(){
 
     // Remove range checks - 2025-01-24
