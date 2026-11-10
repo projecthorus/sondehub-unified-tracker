@@ -99,13 +99,13 @@ body {
 #timebox {
     top: 7px;
     right: 5px;
-    width: 205px;
+    width: 205px; /* Professional */
 }
 
 #lookanglesbox {
     top: 40px;
     right: 5px;
-    width: 205px;
+    width: 205px; /* Professional */
 }
 
 #timebox.past svg path {
@@ -405,7 +405,10 @@ header .search form input[type='submit'] {
 #main .row.follow .icon-target:before {
     display: inline-block;
 }
-#main .row.active .data { display: inline-block; }
+#main .row.active .data { 
+    display: inline-block; 
+    min-height: 190px; /* Amateur */
+}
 #main .row .data .left,
 #main .row .data .right {
     position: relative;
@@ -441,6 +444,12 @@ header .search form input[type='submit'] {
     cursor: pointer;
     z-index: 5;
     text-align: center;
+}
+
+#main .row .data .sbutton.active { /* Amateur */
+    background-color: #33b5e5;
+    border: 1px solid #33b5e5;
+    color: #fff;
 }
 
 #main .row .data .vbutton.active {
@@ -962,3 +971,21 @@ header .search form input[type='submit'] {
     }
 }
 
+/* Amateur */
+/* login button */
+#login_url {
+    display: block;
+    background-color: #33b5e5;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+}
+/* predictor settings pane */ 
+.prediction_settings { 
+    background-image: url("../glyphs/icon-balloon.svg");
+    background-repeat: no-repeat;
+    background-size: 50%;
+    background-position: center;
+  }
