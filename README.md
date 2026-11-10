@@ -5,11 +5,11 @@ A fork of [habitat-mobile-tracker](https://github.com/rossengeorgiev/habitat-mob
 ![mobile tracker screenshot](resources/mobiletracker-screencap.png "mobile tracker screenshot")
 
 A webapp for tracking radiosondes. Works an desktop and mobile devices.
-The SondeHub tracker is a continuation of the [HabHub Tracker](http://tracker.habhub.org).
+The SondeHub tracker is a continuation of the [HabHub Tracker](https://tracker.habhub.org/).
 
 ## Features
 
-* Radiosonde Tracking using [SondeHub V2](https://github.com/projecthorus/sondehub-infra/wiki/ElasticSearch-Kibana-access) data. 
+* Radiosonde Tracking using [SondeHub](https://github.com/projecthorus/sondehub-infra/wiki/ElasticSearch-Kibana-access) data. 
 * Telemetry graph for each balloon
 * Chase Car functionality
 * Near realtime weather overlays
@@ -31,12 +31,12 @@ Any modern browser should be able to run the app. Some features are limited to C
 
 ## Contribute
 
-Don't hesitate to report any issues, or suggest improvements. Just visit the [issues page](https://github.com/projecthorus/sondehub-tracker/issues).
+Don't hesitate to report any issues, or suggest improvements. Just visit the [issues page](https://github.com/projecthorus/sondehub-unified-tracker/issues).
 Pull requests are welcome.
 
 ## Installation
 
-    $ git clone https://github.com/projecthorus/sondehub-tracker.git
+    $ git clone https://github.com/projecthorus/sondehub-unified-tracker.git
     $ ./build.sh
     $ python serve.py
 

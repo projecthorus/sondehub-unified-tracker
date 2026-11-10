@@ -5,6 +5,7 @@ set -e
 VERSION="`git rev-parse --short HEAD`"
 BUILD_DATE="`date -u +%Y-%m-%dT%H:%M:%SZ`"
 
+# Amateur didn't have the creeate versioning previously
 # create version check file
 echo -n "Generating js/version.json... "
 echo "{\"build_date\": \"$BUILD_DATE\", \"version\": \"$VERSION\", \"refresh\": 86400}" > js/version.json
