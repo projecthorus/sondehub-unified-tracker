@@ -10,7 +10,6 @@ self.addEventListener('install', function(event) {
                     '/css/main.css',
                     '/css/leaflet.css',
                     '/css/leaflet.fullscreen.css',
-                    '/js/aws-sdk-2.1029.0.min.js',
                     '/js/leaflet.js',
                     '/js/Leaflet.fullscreen.min.js',
                     '/js/L.Terminator.js',
