@@ -27,17 +27,18 @@
         <link rel="stylesheet" href="css/main.css"/>
         <link rel="stylesheet" href="css/leaflet.css"/>
         <link rel="stylesheet" href="css/leaflet.fullscreen.css"/>
-        <link rel="stylesheet" href="css/maplibre-gl.css"/>
+        <link rel="stylesheet" href="css/maplibre-gl.css"/> <!-- Professional Only-->
 
         <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1130.0.min.js"></script>  <!-- Professional previously had 2.1029 in the solution -->
         <script type="text/javascript" language="javascript" src="js/leaflet.js?v={VER}"></script>
         <script type="text/javascript" language="javascript" src="js/Leaflet.fullscreen.min.js?v={VER}"></script>
         <script type="text/javascript" language="javascript" src="js/L.Terminator.js?v={VER}"></script>
         <script type="text/javascript" language="javascript" src="js/L.TileLayer.NoGap.js?v={VER}"></script>
-        <script type="text/javascript" language="javascript" src="js/maplibre-gl.js?v={VER}"></script>
-        <script type="text/javascript" language="javascript" src="js/leaflet-maplibre-gl.js?v={VER}"></script>
+        <script type="text/javascript" language="javascript" src="js/maplibre-gl.js?v={VER}"></script> <!-- Professional Only -->
+        <script type="text/javascript" language="javascript" src="js/leaflet-maplibre-gl.js?v={VER}"></script> <!-- Professional Only -->
+        <script type="text/javascript" language="javascript" src="js/leaflet.antimeridian-src.js?v={VER}"></script> <!-- Amateur Only -->
         <script type="text/javascript" language="javascript" src="js/paho-mqtt.js?v={VER}"></script>
-    
+
         <script type="text/javascript" language="javascript" src="js/jquery-1.12.4-min.js"></script>
         <script type="text/javascript" language="javascript" src="js/iscroll.js?v={VER}"></script>
         <script type="text/javascript" language="javascript" src="js/chasecar.lib.js?v={VER}"></script>
@@ -179,45 +180,45 @@
         <div class="slimContainer">
             <h2><i class="icon-question rfloat"></i>Welcome</h2>
             <hr/>
-            <div id="motda">  
+            <div id="motda">
                 <div class="professional-element">
-                <h3>New Users</h3>
-                <b>Please read our <a href="https://github.com/projecthorus/sondehub-tracker/wiki/Radiosonde-Hunting-Etiquette" target="_blank" rel="noopener">Radiosonde Hunting Etiquette</a> page to help make this a fun and enjoyable hobby for everyone!</b>
-                <br/>
-                A User Guide and other information on the tracker is <a href="https://github.com/projecthorus/sondehub-tracker/wiki" target="_blank" rel="noopener">available here.</a>
-                <br/>
-                <h4>Radiosondes?</h4>
-                To learn more check out our 
-                <a href="https://www.youtube.com/watch?v=YBy-bXEWZeM" target="_blank" rel="noopener">LCA video</a>.</br>
-                You can set up a receiver station using 
-                <a href="https://github.com/projecthorus/radiosonde_auto_rx/wiki" target="_blank" rel="noopener">auto_rx</a> or <a href="https://github.com/dl9rdz/rdz_ttgo_sonde" target="_blank" rel="noopener">rdzTTGOsonde</a>.
-                <br/>
-                
-                <h4>Found a Radiosonde?</h4>
-                <b>Please report recovered radiosondes as soon as possible using our <a href="https://sondehub.org/found" target="_blank" rel="noopener">recovery reporting page!</a></b>
+                    <h3>New Users</h3>
+                    <b>Please read our <a href="https://github.com/projecthorus/sondehub-tracker/wiki/Radiosonde-Hunting-Etiquette" target="_blank" rel="noopener">Radiosonde Hunting Etiquette</a> page to help make this a fun and enjoyable hobby for everyone!</b>
+                    <br/>
+                    A User Guide and other information on the tracker is <a href="https://github.com/projecthorus/sondehub-tracker/wiki" target="_blank" rel="noopener">available here.</a>
+                    <br/>
+                    <h4>Radiosondes?</h4>
+                    To learn more check out our 
+                    <a href="https://www.youtube.com/watch?v=YBy-bXEWZeM" target="_blank" rel="noopener">LCA video</a>.</br>
+                    You can set up a receiver station using 
+                    <a href="https://github.com/projecthorus/radiosonde_auto_rx/wiki" target="_blank" rel="noopener">auto_rx</a> or <a href="https://github.com/dl9rdz/rdz_ttgo_sonde" target="_blank" rel="noopener">rdzTTGOsonde</a>.
+                    <br/>
+                    
+                    <h4>Found a Radiosonde?</h4>
+                    <b>Please report recovered radiosondes as soon as possible using our <a href="https://sondehub.org/found" target="_blank" rel="noopener">recovery reporting page!</a></b>
 
-                <h4>Support Us!</h4>
-                If you use SondeHub regularly, please consider <a href="https://www.patreon.com/sondehub" target="_blank" rel="noopener">supporting us on Patreon</a>, or with a <a href="https://sondehub.org/go/donate" target="_blank" rel="noopener">donation on Paypal</a>.</br>
-                We gratefully thank our major supporters: </br>
-                <a href="https://ampr.org" target="_blank" rel="noopener"><img src="img/ardc_logo_small.png" width="40%"/></a> &nbsp;&nbsp; <a href="https://www.graw.de" target="_blank" rel="noopener"><img src="img/graw_logo_small.png" width="40%" /></a>
-                
-                <h4>Contact Us!</h4>
-                For SondeHub usage questions and support, feel free to email us at <a href="mailto:support@sondehub.org">support@sondehub.org</a>.
-                <br/>
-                You can also find us on <a href="https://sondehub.org/go/discord" target="_blank" rel="noopener">Discord</a>.
+                    <h4>Support Us!</h4>
+                    If you use SondeHub regularly, please consider <a href="https://www.patreon.com/sondehub" target="_blank" rel="noopener">supporting us on Patreon</a>, or with a <a href="https://sondehub.org/go/donate" target="_blank" rel="noopener">donation on Paypal</a>.</br>
+                    We gratefully thank our major supporters: </br>
+                    <a href="https://ampr.org" target="_blank" rel="noopener"><img src="img/ardc_logo_small.png" width="40%"/></a> &nbsp;&nbsp; <a href="https://www.graw.de" target="_blank" rel="noopener"><img src="img/graw_logo_small.png" width="40%" /></a>
+                    
+                    <h4>Contact Us!</h4>
+                    For SondeHub usage questions and support, feel free to email us at <a href="mailto:support@sondehub.org">support@sondehub.org</a>.
+                    <br/>
+                    You can also find us on <a href="https://sondehub.org/go/discord" target="_blank" rel="noopener">Discord</a>.
 
-                <h4>Amateur HAB Launches?</h4>
-                You can find Amateur High-Altitude Balloon launches on the <a href="https://amateur.sondehub.org/" target="_blank" rel="noopener">Sondehub-Amateur Tracker</a>.
-                
-                <h4>SondeHub Status Pages</h4>
-                This site uses data from the <a href="https://github.com/projecthorus/sondehub-infra/wiki" target="_blank" rel="noopener">SondeHub</a> database.<br/>
-                You can find the status of the SondeHub Database on the <a href="https://sondehub.org/go/status" target="_blank" rel="noopener">SondeHub Dashboard</a>.<br/>
-                You can view outages of the SondeHub Database at <a href="https://sondehub.statuspage.io/" target="_blank" rel="noopener">SondeHub Status</a>.
+                    <h4>Amateur HAB Launches?</h4>
+                    You can find Amateur High-Altitude Balloon launches on the <a href="https://amateur.sondehub.org/" target="_blank" rel="noopener">Sondehub-Amateur Tracker</a>.
+                    
+                    <h4>SondeHub Status Pages</h4>
+                    This site uses data from the <a href="https://github.com/projecthorus/sondehub-infra/wiki" target="_blank" rel="noopener">SondeHub</a> database.<br/>
+                    You can find the status of the SondeHub Database on the <a href="https://sondehub.org/go/status" target="_blank" rel="noopener">SondeHub Dashboard</a>.<br/>
+                    You can view outages of the SondeHub Database at <a href="https://sondehub.statuspage.io/" target="_blank" rel="noopener">SondeHub Status</a>.
 
-                <h4>Chase Cars</h4>
-                Chase Cars can show up on the map using this tracker's chase-car features (look for the car icon at top-right) 
-                or upload their position from <a href="https://github.com/projecthorus/chasemapper" target="_blank" rel="noopener">Chasemapper</a> or <a href="https://github.com/dl9rdz/rdz_ttgo_sonde" target="_blank" rel="noopener">rdzTTGOsonde</a>.
-                
+                    <h4>Chase Cars</h4>
+                    Chase Cars can show up on the map using this tracker's chase-car features (look for the car icon at top-right) 
+                    or upload their position from <a href="https://github.com/projecthorus/chasemapper" target="_blank" rel="noopener">Chasemapper</a> or <a href="https://github.com/dl9rdz/rdz_ttgo_sonde" target="_blank" rel="noopener">rdzTTGOsonde</a>.
+                    
                 </div>
                 <div class="amateur-element">
                     This site displays telemetry from Amateur Radio high-altitude balloon launches, using the 

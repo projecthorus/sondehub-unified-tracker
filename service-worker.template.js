@@ -14,6 +14,7 @@ self.addEventListener('install', function(event) {
                     '/js/Leaflet.fullscreen.min.js',
                     '/js/L.Terminator.js',
                     '/js/L.TileLayer.NoGap.js',
+                    '/js/leaflet.antimeridian-src.js', // Amateur Only
                     '/js/paho-mqtt.js',
                     '/js/jquery-1.12.4-min.js',
                     '/js/iscroll.js',
@@ -47,7 +48,7 @@ self.addEventListener('install', function(event) {
                     '/font/fontawesome-webfont.woff2',
                     '/font/Roboto-regular.woff',
                     '/index.html',
-                    '/'
+                    '/' // This line only in Professional.
                 ]
             );
         })
