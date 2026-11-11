@@ -2,6 +2,15 @@
  * Main style sheet
  *
  */
+
+body[sondehub-type="PROFESSIONAL"] .amateur-element {
+    display: none;
+}
+
+body[sondehub-type="AMATEUR"] .professional-element {
+    display: none;
+}
+
 @font-face {
   font-family: 'Roboto';
   font-style: normal;
