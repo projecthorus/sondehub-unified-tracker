@@ -10,13 +10,11 @@ self.addEventListener('install', function(event) {
                     '/css/main.css',
                     '/css/leaflet.css',
                     '/css/leaflet.fullscreen.css',
-                    '/css/skewt.css',
-                    '/js/skewt.js',
-                    '/js/aws-sdk-2.1029.0.min.js',
                     '/js/leaflet.js',
                     '/js/Leaflet.fullscreen.min.js',
                     '/js/L.Terminator.js',
                     '/js/L.TileLayer.NoGap.js',
+                    '/js/leaflet.antimeridian-src.js', // Amateur Only
                     '/js/paho-mqtt.js',
                     '/js/jquery-1.12.4-min.js',
                     '/js/iscroll.js',
@@ -24,8 +22,10 @@ self.addEventListener('install', function(event) {
                     '/js/sondehub.js',
                     '/js/app.js',
                     '/js/colour-map.js',
-                    '/js/xdata.js',
-                    '/js/station.js',
+                    '/js/xdata.js', // Professional
+                    '/js/station.js', // Professional
+                    '/js/suncalc.js', // Amateur
+                    '/js/flight_doc.js', // Amateur
                     '/js/format.js',
                     '/js/rbush.js',
                     '/js/pwa.js',
@@ -42,11 +42,13 @@ self.addEventListener('install', function(event) {
                     '/img/markers/balloon-pop.png',
                     '/img/hab-spinner.gif',
                     '/img/sondehub_au.png',
+                    '/img/sondehub_au_amateur.png', // wasn't in amateur service worker template previously
                     '/favicon.ico',
                     '/font/HabitatFont.woff',
+                    '/font/fontawesome-webfont.woff2',
                     '/font/Roboto-regular.woff',
                     '/index.html',
-                    '/'
+                    '/' // This line only in Professional.
                 ]
             );
         })

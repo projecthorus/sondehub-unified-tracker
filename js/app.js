@@ -40,11 +40,16 @@ function lhash_update(history_step) {
         hash += "&nyan=1";
     }
 
-    if(wvar.nena) {
+    // Professional Only 
+    if(isProfessional() && wvar.nena) {
         hash += "&nena=1";
     }
     if(wvar.box) { // We just need something to change so we can trigger the back button correctly
         hash += "&box="+wvar.box;
+    }
+    // Amateur Only
+    if (isAmateur() && document.getElementById("modulationfilter").value != "all"){
+        hash += "&mo=" + document.getElementById("modulationfilter").value;
     }
 
     hash = encodeURI(hash);
@@ -71,8 +76,9 @@ var wvar = {
     zoom: true,
     query: "",
     nyan: false,
-    nena: false,
     site: 0,
+    // Professional Only
+    nena: false,
     box: ""
 };
 
@@ -96,6 +102,7 @@ function load_hash(no_refresh) {
         focus: "",
         query: "",
         nyan: false,
+        // Professional Only
         nena: false,
         box: ""
     };
@@ -107,14 +114,14 @@ function load_hash(no_refresh) {
 
         switch(k) {
             case "mt":
-                if( baseMaps.hasOwnProperty(v) && map) {
+                if( baseMaps.hasOwnProperty(v) && (map || isAmateur())) { // Map condition in Professional Only
                     map.removeLayer(baseMaps[selectedLayer]);
                     selectedLayer = v;
                     map.addLayer(baseMaps[v]);
                 }
                 break;
             case "mz":
-                if (map){
+                if (map || isAmateur()) { // Map condition in Professional Only
                     map.setZoom(parseInt(v));
                 }
                 break;
@@ -123,12 +130,14 @@ function load_hash(no_refresh) {
                 manual_pan = true;
                 v = v.split(',');
                 var latlng = new L.LatLng(v[0], v[1]);
-                if (map){
+                if (map || isAmateur()) { // Map condition in Professional Only
                     map.panTo(latlng);
                 }
                 break;
             case "f":
-                v = v.toUpperCase();
+                if (isProfessional()) {
+                    v = v.toUpperCase();
+                }
                 refocus = (follow_vehicle != v);
                 follow_vehicle = v;
                 def.focus = v;
@@ -138,22 +147,30 @@ function load_hash(no_refresh) {
                 if(modeList.indexOf(def.mode) == -1) def.mode = (is_mobile) ? modeDefaultMobile : modeDefault;
                 break;
             case "q":
-                v = v.toUpperCase();
+                if (isProfessional()) {
+                    v = v.toUpperCase();
+                }
                 def.query = v;
                 $("header .search input[type='text']").val(v);
                 break;
             case "nyan":
                 def[k] = !!parseInt(v);
                 break;
-            case "nena":
-                def[k] = !!parseInt(v);
-                break;
             case "site":
                 focusID = v;
                 gotoSite(v);
                 break;
+            // Professional Only
             case "box":
                 def[k] = v;
+                break;
+            case "nena":
+                def[k] = !!parseInt(v);
+                break;
+            // Amateur Only
+            case "mo":
+                document.getElementById("modulationfilter").value = v;
+                sidebar_update();
                 break;
         }
     });
@@ -166,16 +183,17 @@ function load_hash(no_refresh) {
 
 
     $.extend(true, wvar, def);
-    if(map){
+    // Map condition and nested if statements only in professional
+    if(map || isAmateur()){
         if (!def["box"]){
             $(".flatpage").hide()
         } else {
             $(".flatpage").hide()
             $("#"+def["box"]).show()
         }
-        checkSize();
-        wvar["box"]= def["box"];
-
+        checkSize(); // Professional Only 
+        wvar["box"]= def["box"]; // Professional Only
+    
         // force refresh
         if(!no_refresh) {
         if(refresh) {
@@ -204,43 +222,53 @@ for(var idx in params) {
         case "embed":
             if(line[1] == "1") {
                 wvar.enabled = true;
-                if(!is_mobile) wvar.mode = 'All';
+                // if(!is_mobile) wvar.mode = '3d'; // Amateur
+                if(!is_mobile) wvar.mode = 'All'; // Professional
             }
             break;
         case "hidelist": if(line[1] == "1") wvar.vlist = false; break;
         case "hidegraph": if(line[1] == "1") wvar.graph = false; break;
         case "expandgraph": if(line[1] == "1") wvar.graph_expanded = true; break;
         case "filter":
-            wvar.query = decodeURIComponent(line[1]);
+            wvar.query = decodeURIComponent(line[1]).replace(/;/g,","); // Amatueur
+            // wvar.query = decodeURIComponent(line[1]); // Professional
             $("header .search input[type='text']").val(wvar.query);
             break;
         case "nyan": wvar.nyan = true; break;
-        case "nena": wvar.nena = true; break;
         case "focus": wvar.focus = decodeURIComponent(line[1]); break;
         case "docid": wvar.docid = line[1]; break;
         case "mode": wvar.mode = decodeURIComponent(line[1]); break;
+        case "nena": wvar.nena = true; break; // Professional Only
     }
 }
 
 // loads the tracker interface
 function trackerInit() {
     // update current position if we geolocation is available
-    if(currentPosition) updateCurrentPosition(currentPosition.lat, currentPosition.lon);
+    if (isProfessional()) {
+        if(currentPosition) { // Professional Only
+            updateCurrentPosition(currentPosition.lat, currentPosition.lon); 
+        }
 
-    
-    
-    if (currentPosition && manual_pan == false){
-        coords = [currentPosition.lat, currentPosition.lon]
-        zoomLevel = 9;
-        map.setView(coords, zoomLevel, {animate: false});
+        if (currentPosition && manual_pan == false){ // Professional Only
+            coords = [currentPosition.lat, currentPosition.lon]
+            zoomLevel = 9;
+            map.setView(coords, zoomLevel, {animate: false});
+        }
     }
-    $('#loading,#settingsbox,#aboutbox,#chasebox').hide(); // welcome screen
+
+    $('#loading,#settingsbox,#aboutbox,#embedbox,#chasebox').hide(); // welcome screen //embedbox only in amateur
     $('header,#main').show(); // interface elements
     checkSize();
 
     // if we there is enough screen space open aboutbox on startup
-    if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) $('.nav li.about').click();
+    if(isProfessional() && !is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) { // Professonal Only
+        $('.nav li.about').click(); 
+    }
 
+    if (isAmateur() && map){ // Amateur only
+        return; 
+    }
 
     if(is_mobile || wvar.enabled) $(".nav .wvar").hide();
 
@@ -252,7 +280,12 @@ function trackerInit() {
 
         return;
     }
-    lhash_update(true);
+    if (isProfessional()) {
+        lhash_update(true); // Professional Only
+    }
+    else if(!map) { // Amateur Only
+         load(); 
+    }
 }
 
 // load the app after a 3s timeout
@@ -339,7 +372,10 @@ function positionUpdateError(error) {
     switch(error.code)
     {
         case error.PERMISSION_DENIED:
-            $('#sw_chasecar').removeClass('on').addClass('off');
+            $('#sw_chasecar').removeClass('on').addClass('off'); // Professional only
+            // Amateur only
+            // alert("no permission to use your location");
+            // $('#sw_chasecar').click(); // turn off chase car
             break;
         default:
         break;
@@ -408,7 +444,9 @@ var positionUpdateHandle = function(position) {
             CHASE_timer = (new Date()).getTime() + 15000;
         }
     }
-
+    else if (isAmateur()) { // Amateur only
+        return; 
+    }
 
     // add/update marker on the map (sondehub.js)
     updateCurrentPosition(lat, lon);
@@ -429,8 +467,6 @@ var positionUpdateHandle = function(position) {
     $('#cc_alt').text(alt + " m");
     $('#cc_accuracy').text(accuracy + " m");
     $('#cc_speed').text(speed + " m/s");
-        
-
 };
 
 var twoZeroPad = function(n) {
@@ -479,8 +515,9 @@ var format_time_friendly = function(start, end) {
 };
 
 var format_coordinates = function(lat, lon, name) {
-    var coords_text;
     var ua =  navigator.userAgent.toLowerCase();
+
+    // Professional
     var span = document.createElement('span')
     var a = document.createElement("a")
     span.appendChild(a)
@@ -497,6 +534,22 @@ var format_coordinates = function(lat, lon, name) {
     a.innerText = roundNumber(lat, 5) + ', ' + roundNumber(lon, 5)
 
     return span.innerHTML;
+
+    // Amamteur's approach is messy
+    // var coords_text;
+    // // determine how to link the coordinates to a native app, if on a mobile device
+    // if(ua.indexOf('iphone') > -1) {
+    //     coords_text = '<a href="maps://?q='+lat+','+lon+'">' +
+    //                   roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
+    // } else if(ua.indexOf('android') > -1) {
+    //     coords_text = '<a href="geo:'+lat+','+lon+'?q='+lat+','+lon+'('+name+')">' +
+    //                   roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
+    // } else {
+    //     coords_text = '<a href="https://www.google.com/maps/search/?api=1&query='+lat+','+lon+'" target="_blank" rel="noopener noreferrer">' +
+    //         roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
+    // }
+
+    // return coords_text;
 };
 
 // runs every second
@@ -585,6 +638,25 @@ $(window).ready(function() {
             set_polyline_visibility(name, true);
         }
     });
+
+    // Amateur only
+    if (isAmateur()) {
+        $("#main").on('click','.row .data .sbutton.hysplit', function(event) {
+            event.stopPropagation();
+
+            var elm = $(this);
+            var name = elm.attr('data-vcallsign');
+
+            if(elm.hasClass("active")) {
+                elm.removeClass('active');
+                processHysplit(name, false);
+            }
+            else {
+                elm.addClass('active');
+                processHysplit(name, true);
+            }
+        });
+    }
 
     // reset nite-overlay and timebox when mouse goes out of the graph box
     $("#telemetry_graph").on('mouseout','.holder', function() {
@@ -675,14 +747,16 @@ $(window).ready(function() {
                 default: pretty_name = name[0].toUpperCase() + name.slice(1);
             }
         }
-        var visible_box = $(".flatpage:visible");
-        if (visible_box.length > 0){
-            wvar.box = visible_box[0].id
-        } else {
-            wvar.box = null
-        }
+        if (isProfessional()) { // Professional Only
+            var visible_box = $(".flatpage:visible");
+            if (visible_box.length > 0){
+                wvar.box = visible_box[0].id
+            } else {
+                wvar.box = null
+            }
 
-        lhash_update(true);
+            lhash_update(true);
+        }
         checkSize();
     });
 
@@ -696,6 +770,10 @@ $(window).ready(function() {
             field.removeAttr('disabled');
             e.removeClass('on').addClass('off');
 
+            // Amateur only
+            if(isAmateur() && navigator.geolocation) {
+                navigator.geolocation.clearWatch(CHASE_enabled);
+            }
             CHASE_enabled = null;
             //CHASE_enabled = false;
 
@@ -723,13 +801,21 @@ $(window).ready(function() {
                 ChaseCar.updatePosition(callsign, { coords: { latitude: GPS_lat, longitude: GPS_lon, altitude: GPS_alt, speed: GPS_speed }});
             }
 
-            CHASE_enabled = true;
+            if (isProfessional()){
+                CHASE_enabled = true; // Professional Only
+            }
+            // Amateur Only 
+            else if(navigator.geolocation) {
+                CHASE_enabled = navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
+            }
+            
 
             // hide the blue man
             if(currentPosition && currentPosition.marker) map.removeLayer(currentPosition.marker);
         }
     });
 
+// Recovery - Only used in Professional
     // Functions for the payload recovery feature
     // Logic to switch the recovery OK button
     $("#sw_recovery_ok").click(function() {
@@ -760,6 +846,14 @@ $(window).ready(function() {
             $("#sw_recovery_ok").removeClass('on').addClass('off');
         }
     });
+    $("#recovery_callsign").on('change keyup', function() {
+        callsign = $(this).val().trim();
+        offline.set('callsign', callsign); // put in localStorage
+        CHASE_listenerSent = false;
+        $('#cc_callsign').val(callsign);
+    });
+
+// Chase Car
     // Logic to switch the use car position button
     $("#sw_use_car_pos").click(function() {
         var e = $(this);
@@ -778,21 +872,13 @@ $(window).ready(function() {
         callsign = $(this).val().trim();
         offline.set('callsign', callsign); // put in localStorage
         CHASE_listenerSent = false;
-        $('#recovery_callsign').val(callsign);
+        $('#recovery_callsign').val(callsign); // Recovery Only used in Professional
     });
-
-    $("#recovery_callsign").on('change keyup', function() {
-        callsign = $(this).val().trim();
-        offline.set('callsign', callsign); // put in localStorage
-        CHASE_listenerSent = false;
-        $('#cc_callsign').val(callsign);
-    });
-
 
     // load value from localStorage
     callsign = offline.get('callsign');
     $('#cc_callsign').val(callsign);
-    $('#recovery_callsign').val(callsign);
+    $('#recovery_callsign').val(callsign); // Recovery Only used in Professional
 
     // settings page
 
@@ -805,15 +891,21 @@ $(window).ready(function() {
         "#sw_haxis_hours",
         "#sw_daylight",
         "#sw_hide_receivers",
-        "#sw_hide_recoveries",
         "#sw_hide_chase",
         "#sw_hide_timebox",
         "#sw_hilight_vehicle",
         '#sw_hide_titles',
-        '#sw_layers_launches',
         '#sw_selective_sidebar',
         "#sw_nowelcome",
         "#sw_interpolate",
+        // Amateur Only Options
+        '#sw_hide_horizon',
+        '#sw_show_aprs',
+        '#sw_show_testing',
+        "#sw_float_wide",
+        // Professional Only Options
+        "#sw_hide_recoveries",
+        '#sw_layers_launches',
     ];
 
     // applies functionality when switches are toggled
@@ -839,7 +931,7 @@ $(window).ready(function() {
                 if(on) focusVehicle(follow_vehicle);
                 else focusVehicle(null, true);
                 break;
-            case "opt_imperial":
+            case "opt_imperial": // Professional Only
                 if (map_scale){
                     map_scale.remove()
                 }
@@ -851,19 +943,21 @@ $(window).ready(function() {
                     map_scale = L.control.scale({position:'bottomright', imperial:false}).addTo(map);
                 }
                 zoom_controls.addTo(map);
-
             case "opt_haxis_hours":
                 refreshUI();
                 break;
             case "opt_daylight":
                 if(on) { 
                     nite.addTo(map);
-                    niteupdate = setInterval(function() {
-                        nite.setTime();
-                    }, 60000); // Every minute
+                    startNiteUpdate(); // Amatuer
+                    // Professional
+                    // niteupdate = setInterval(function() {
+                    //     nite.setTime();
+                    // }, 60000); // Every minute
                 } else { 
                     nite.remove();
-                    clearInterval(nite);
+                    stopNiteUpdate(); // Amateur
+                    // clearInterval(nite); // Professional
                 }
                 break;
             case "opt_hide_receivers":
@@ -877,7 +971,7 @@ $(window).ready(function() {
                     refreshReceivers();
                 }
                 break;
-            case "opt_hide_recoveries":
+            case "opt_hide_recoveries": // Recoveries only used in Professional
                     if(on) {
                         updateRecoveries([]);
                         clearTimeout(periodical_recoveries);
@@ -906,6 +1000,14 @@ $(window).ready(function() {
                     $('#lookanglesbox').css({top:'40px'});
                 }
                 break;
+            case "opt_hide_horizon": // Horizon Lines only used in Amateur
+                if(on) {
+                    showHorizonRings();
+                }
+                else {
+                    hideHorizonRings();
+                }
+                break;
             case "opt_hide_titles":
                 if(on) {
                     hideTitles();
@@ -921,12 +1023,18 @@ $(window).ready(function() {
             case "opt_selective_sidebar":
                 sidebar_update();
                 break;
-            case "opt_layers_launches":
+            case "opt_layers_launches": // Only used in Professional
                 if(on) {
                     map.removeLayer(launches);
                 } else {
                     map.addLayer(launches);
                 }
+                break;
+            case "opt_show_aprs": // Only used in Amateur
+                clean_refresh(wvar.mode, true, false);
+                break;
+            case "opt_show_testing": // Only used in Amateur
+                clean_refresh(wvar.mode, true, false);
                 break;
             case "opt_interpolate":
                 if(on) { graph_gap_size = graph_gap_size_max; }
@@ -968,7 +1076,10 @@ $(window).ready(function() {
         });
 
         navigator.geolocation.getCurrentPosition(positionUpdateHandle);
-        if(navigator.geolocation) navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
+
+        if(isProfessional() && navigator.geolocation){ // Professional only
+            navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
+        }
     }
 
     // weather feature
@@ -979,7 +1090,7 @@ $(window).ready(function() {
             ['rainviewer', 'RainViewer'],
             ['rainviewer-coverage', 'RainViewer Coverage'],
         ]],
-        ['North America', [
+        ['North America', [ // Only in Professional
             ['nexrad-n0q-900913', 'NEXRAD Base Reflectivity'],
             ['goes-ir-4km-900913', 'GOES NA Infrared ~4km'],
             ['goes-wv-4km-900913', 'GOES NA Water Vapor ~4km'],
@@ -1067,7 +1178,17 @@ $(window).ready(function() {
    $("header .search form").on('submit', function(e) {
        e.preventDefault();
 
-       var text = $("header .search input[type='text']").val().toUpperCase();
+    //    // Amateur
+    //    var text = $("header .search input[type='text']").val().replace(/;/g,",");
+    //    // Professional
+    //    var text = $("header .search input[type='text']").val().toUpperCase();
+    //    $("header .search input[type='text']")[0].value = text; // update field in case it wasn't already uppercase
+
+    // Combined both
+       var text = $("header .search input[type='text']").val().replace(/;/g,",");
+       if (isProfessional()) {
+            text = text.toUpperCase();
+       }
        $("header .search input[type='text']")[0].value = text; // update field in case it wasn't already uppercase
 
        if(text === wvar.query) return;
@@ -1084,14 +1205,13 @@ $(window).ready(function() {
        }
 
        // Insert the serial number into the recovery reporting serial number textbox
-       $("#pr_serial").val(text);
+       $("#pr_serial").val(text); // Professional
 
        clean_refresh(wvar.mode, true, true);
    });
 });
 
-
-function check_version(){
+function check_version(){ // Professional Only
     const updateRequest = new Request("/js/version.json");
     fetch(updateRequest)
         .then(function(response){ return response.json()})
@@ -1112,12 +1232,12 @@ function check_version(){
             }
         })
 }
-function update_site(){
+function update_site(){ // Professional Only
 
     window.location.reload(true)
 }
 
-function check_banner(){
+function check_banner(){ // Professional Only
     const bannerRequest = new Request("https://api.v2.sondehub.org/banner");
     fetch(bannerRequest)
         .then(function(response){ return response.json()})
@@ -1130,7 +1250,7 @@ function check_banner(){
         })
 }
 
-function update_countdown(){
+function update_countdown(){ // Professional Only
     var date = new Date(0);
     time_remaining = (reload_end_time - new Date().getTime())/1000
     date.setSeconds(time_remaining);
@@ -1138,9 +1258,9 @@ function update_countdown(){
     document.getElementById("reload_timer").innerText = timeString;
 }
 
-check_version()
-check_banner()
-update_check = setInterval(check_version, 15 * 60 * 1000)
-load_hash();
-startAjax();
-load();
+check_version(); // Professional Only
+check_banner(); // Professional Only
+update_check = setInterval(check_version, 15 * 60 * 1000) // Professional Only
+load_hash(); // Professional Only
+// startAjax(); // Professional Only
+load(); // Professional Only

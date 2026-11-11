@@ -5,3 +5,5 @@
 /service-worker.js
 /js/version.json
 tiles/
+.DS_Store
+js/sondehubType.js
