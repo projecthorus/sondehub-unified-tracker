@@ -4078,14 +4078,16 @@ function addPosition(position) {
             }
             for(var prediction in vehicle_info["markers_hysplit"]) { // Amateur
                 for(var pred_hour in vehicle_info["markers_hysplit"][prediction]){
-                    if (prediction){
+                    if (pred_hour){
                         map.removeLayer(vehicle_info["markers_hysplit"][prediction][pred_hour]);
                     }
                 }
             }
             try {
                 for(var p in vehicle_info.polyline) {
-                    map.removeLayer(vehicle_info.polyline[p]);
+                    if (vehicle_info.polyline){
+                        map.removeLayer(vehicle_info.polyline[p]);
+                    }
                 }
             } catch (e) {};
             for (let i = 0; i < potentialobjects.length; i++) {
