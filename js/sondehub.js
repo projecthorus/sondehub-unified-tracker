@@ -1798,7 +1798,7 @@ function drawLOSPaths(vcallsign) {
             receivers[r_index].marker.getLatLng(),
         ];
 
-        var p = new L.Polyline(path, { // amateur has Wrapped
+        var p = new L.Wrapped.Polyline(path, {
             color: '#0F0',
             opacity: 0.8,
             weight: 3,
@@ -2677,7 +2677,7 @@ function createHysplit(callsign, adjustment, alt_color) {
 
             }
             // Add the polyline to the map.
-            vehicle.prediction_hysplit[adjustment] = new L.Polyline(path, // Removed Wrapped
+            vehicle.prediction_hysplit[adjustment] = new L.Wrapped.Polyline(path,
                 {
                     'color':alt_color,
                 }
@@ -2870,12 +2870,12 @@ function redrawPrediction(vcallsign) {
         //     weight: 6,
         //     color: "#000"
         // })]
-        vehicle.prediction_polyline = [new L.Polyline(line, {
+        vehicle.prediction_polyline = [new L.Wrapped.Polyline(line, {
             color: balloon_colors[vehicle.color_index],
             opacity: 0.8, // Was 0.4
             weight: 3,
          }),
-         new L.Polyline(line, {
+         new L.Wrapped.Polyline(line, {
             color: "#000",
             opacity: 0.1, // Was 0.4
             weight: 6,
@@ -3660,7 +3660,7 @@ function addPosition(position) {
             };
 
             polyline = [
-                new L.Polyline(point, { // Wrapped in Amatuer
+                new L.Wrapped.Polyline(point, {
                     color: car_colors[color_index],
                     opacity: 1,
                     weight: 3,
@@ -3895,12 +3895,12 @@ function addPosition(position) {
             
             polyline_visible = false; // amateur had true;
             polyline = [
-                new L.Polyline(point, { // amateur had L.Wrapped.
+                new L.Wrapped.Polyline(point, {
                     color: balloon_colors[color_index],
                     opacity: 1,
                     weight: 3,
                 }),//.addTo(map), // Amateur had .addTo(map),
-                new L.Polyline(point, {
+                new L.Wrapped.Polyline(point, {
                     color: "#fff",
                     opacity: 0.6,
                     weight: 6,
@@ -3946,7 +3946,7 @@ function addPosition(position) {
                             line: [],
                             polyline_visible: polyline_visible,
                             polyline: polyline !== null ? polyline : [
-                                new L.Polyline(point, { // Amateur had Wrapped
+                                new L.Wrapped.Polyline(point, {
                                     color: "#ffffff",
                                     opacity: 1,
                                     weight: 3,
@@ -4006,7 +4006,7 @@ function addPosition(position) {
             vehicle_info.polyline = [];
 
             for(k in rainbow) {
-                vehicle_info.polyline.push(new L.Polyline(point, { // Amateur had Wrapped
+                vehicle_info.polyline.push(new L.Wrapped.Polyline(point, {
                     zIndexOffset: (Z_PATH - (k * 1)),
                     color: rainbow[k],
                     opacity: 1,
