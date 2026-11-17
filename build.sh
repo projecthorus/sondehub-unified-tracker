@@ -6,6 +6,10 @@ if [[ -z $1 ]];
 then 
     echo "No parameter passed. AMATEUR or PROFESSIONAL?"
     exit 0
+elif [[ $1 != AMATEUR ]] && [[ $1 != PROFESSIONAL ]] 
+then 
+    echo "AMATEUR or PROFESSIONAL?"
+    exit 0
 else
     echo Building $1
 fi
@@ -26,7 +30,7 @@ echo -n "Generating index.html... "
 sed -e "s/{VER}/$VERSION/" -e "s/{BUILD_DATE}/$BUILD_DATE/" -e "s/{TYPE}/$TYPE/" index.template.html > index.html
 echo "Done!"
 
-echo -n "Generating service-worker.js... "
+echo -n "Generating sondehubType.js... "
 sed -e "s/{TYPE}/$TYPE/" sondehubType.template.js > js/sondehubType.js
 echo "Done!"
 
