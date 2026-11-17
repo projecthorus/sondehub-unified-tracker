@@ -43,6 +43,8 @@ self.addEventListener('install', function(event) {
                     '/img/hab-spinner.gif',
                     '/img/sondehub_au.png',
                     '/img/sondehub_au_amateur.png', // wasn't in amateur service worker template previously
+                    '/img/splash/splash-wide.png',
+                    '/img/splash/splash-wide_amateur.png',
                     '/favicon.ico',
                     '/font/HabitatFont.woff',
                     '/font/fontawesome-webfont.woff2',
