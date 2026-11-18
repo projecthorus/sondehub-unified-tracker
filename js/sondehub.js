@@ -961,8 +961,6 @@ function clean_refresh(text, force, history_step) {
     clearTimeout(periodical);
     clearTimeout(periodical_focus);
     clearTimeout(periodical_focus_new);
-    clearTimeout(periodical_receivers);
-    clearTimeout(periodical_listeners);
 
     refresh();
     if (!offline.get("opt_hide_chase")) {
@@ -3767,14 +3765,13 @@ function addPosition(position) {
                 icon: balloonIcon,
                 title: tempTitle,
                 zIndexOffset: Z_PAYLOAD,
+                payload: vcallsign
             }).addTo(map).on('click', onClick);
 
             // Scroll list stuff here.
             function onClick(e) {
                 $(".row.active").removeClass('active');
-                _vehicle_id = e.target.options.title.split(' ')[1]; // Professional
-                // _vehicle_id = e.target.options.title; // Amateur 
-                _vehicle_idname = ".vehicle"+vehicles[_vehicle_id].uuid;
+                _vehicle_idname = ".vehicle"+vehicles[e.target.options.payload].uuid;
                 $(_vehicle_idname).addClass('active');
                 listScroll.refresh();
                 listScroll.scrollToElement(_vehicle_idname, 0);
@@ -4996,7 +4993,7 @@ function refreshSingle(serial) { // Only in Professional
     });
 }
 
-function refreshSingleNew(serial) { // ONly in Professional
+function refreshSingleNew(serial) { // Only in Professional
     if(ajax_inprogress_single_new) {
         clearTimeout(periodical_focus_new);
         periodical_focus_new = setTimeout(refreshSingle, 2000, serial);
@@ -5095,8 +5092,6 @@ function refreshReceivers() {
               }, 50);
             },
             complete: function(request, textStatus) {
-                // Disable periodical listener refresh - this data now comes via websockets.
-                //periodical_receivers = setTimeout(function() {refreshReceivers(false)}, 60 * 10 * 1000);
                 if (!offline.get("opt_hide_chase")) {
                     refreshNewReceivers(true);
                 }
@@ -5126,12 +5121,6 @@ function refreshNewReceivers(initial, serial) {
         success: function(response, textStatus) {
             if (!offline.get("opt_hide_chase")) {
                 updateChase(response);
-            }
-        },
-        complete: function(request, textStatus) {
-            if (typeof serial === 'undefined') {
-                // Disable periodical listener refresh - this data now comes via websockets.
-                //periodical_listeners = setTimeout(function() {refreshNewReceivers(false)}, 60 * 1000);
             }
         }
     });
@@ -5226,19 +5215,15 @@ function refreshPredictions() { // Only in Amateur
     });
 }
 
-var periodical, periodical_focus, periodical_focus_new, periodical_receivers, periodical_listeners, periodical_recoveries;
-var periodical_predictions = null; // Periodical_predictions and periodical_recoveries only in Professional
-var timer_seconds = 30;
+var periodical, periodical_focus, periodical_focus_new;
 
+// This used refresh ajax endpoints regularly, however we've been using websockets
+// so this only acts as a bit of a hold down timer to prevent lots of requests
+// if for example a user clicks on a bunch of stuff or scrolls the time picker
 function startAjax() {
     // prevent insane clicks to start numerous requests
-    clearTimeout(periodical);
-    clearTimeout(periodical_focus);
-    clearTimeout(periodical_focus_new);
-    clearTimeout(periodical_receivers);
-    clearTimeout(periodical_predictions); // Only in Professional
+    stopAjax();
 
-    //periodical = setInterval(refresh, timer_seconds * 1000);
     refresh();
 
     refreshPatreons();
@@ -5262,9 +5247,6 @@ function stopAjax() {
     periodical_focus_new = null;
     ajax_inprogress_single_new = false;
     if(ajax_positions_single_new) ajax_positions_single_new.abort();
-
-    clearTimeout(periodical_predictions); // Only in Professional
-    periodical_predictions = null; // Only in Professional
     
     if(ajax_predictions) ajax_predictions.abort();
 }

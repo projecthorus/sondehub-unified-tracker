@@ -962,7 +962,6 @@ $(window).ready(function() {
             case "opt_hide_receivers":
                 if(on) {
                     updateReceivers([],single=false);
-                    //clearTimeout(periodical_listeners);
                     receiversHidden = true;
                 }
                 else {
@@ -973,7 +972,6 @@ $(window).ready(function() {
             case "opt_hide_recoveries": // Recoveries only used in Professional
                     if(on) {
                         updateRecoveries([]);
-                        clearTimeout(periodical_recoveries);
                     }
                     else {
                         refreshRecoveries();
@@ -982,7 +980,6 @@ $(window).ready(function() {
             case "opt_hide_chase":
                 if(on) {
                     chaseCarsHidden = true;
-                    //clearTimeout(periodical_listeners);
                     deleteChase();
                 } else {
                     chaseCarsHidden = false;
