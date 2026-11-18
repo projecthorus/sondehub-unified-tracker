@@ -146,9 +146,10 @@ var modeList = [
 var modeDefault = "3h";
 var modeDefaultMobile = "1h";
 
-// Amateur
-// var modeDefault = "12h";
-// var modeDefaultMobile = "12h";
+if (isAmateur()) {
+    var modeDefault = "12h";
+    var modeDefaultMobile = "12h";
+}
 var longModes = ['31d', '186d', '366d']; // These modes only available if filtering is on.
 
 
@@ -1546,7 +1547,7 @@ function guess_name(key) {
   return title_case(key.replace(/_/g, " "));
 }
 
-function habitat_data(jsondata, alternative) {
+function habitat_data(jsondata, data_ages, current_timestamp, alternative) {
     var keys = globalKeys;
 
     var tooltips = {
@@ -1600,7 +1601,10 @@ function habitat_data(jsondata, alternative) {
 
     if (isProfessional()) {
         for(var key in data) {
-            if ((key === "frequency" && txFreq) || (key === "xdata" && xdataFound)) {} else {
+            if ((key === "frequency" && txFreq) || (key === "xdata" && xdataFound)) {
+
+            }
+            else {
                 if(data_ages.hasOwnProperty(key)){
                     key_age = data_ages[key];
                 } else {
@@ -1613,7 +1617,10 @@ function habitat_data(jsondata, alternative) {
     else if (isAmateur()) {
         for (var field in keyOrder) {
             if (keyOrder[field] in data) {
-                if (keyOrder[field] === "frequency" && txFreq) {} else {
+                if (keyOrder[field] === "frequency" && txFreq) {
+
+                }
+                else {
                     array.push([keyOrder[field], data[keyOrder[field]]]);
                     tempArray.push(keyOrder[field]);
                 }
@@ -1621,15 +1628,6 @@ function habitat_data(jsondata, alternative) {
         }
 
         for (var key in data) {
-            if ((key === "frequency" && txFreq) || (key === "xdata" && xdataFound)) {} else {
-                if(data_ages.hasOwnProperty(key)){
-                    key_age = data_ages[key];
-                } else {
-                    key_age = current_timestamp;
-                }
-                array.push([key, data[key], key_age]);
-            }
-
             if (!tempArray.includes(key)) {
                 array.push([key, data[key]]);
                 tempArray.push(key);
@@ -2208,10 +2206,10 @@ function updateVehicleInfo(vcallsign, newPosition) {
         $('.landscape').append('<div id="lv'+vehicle.uuid+'" class="row vehicle'+vehicle.uuid+'" data-vcallsign="'+vcallsign+'"></div>');
     }
 
-// Professional had this if else block here, amateur has it something further along
-//   } else if(elm.attr('data-vcallsign') === undefined) {
-//     elm.attr('data-vcallsign', vcallsign);
-//   }
+    // Professional had this if else block here, amateur has it something further along
+    //   } else if(elm.attr('data-vcallsign') === undefined) {
+    //     elm.attr('data-vcallsign', vcallsign);
+    //   }
 
     if (offline.get('opt_selective_sidebar')) {
         if (map.getBounds().contains(vehicles[vcallsign].marker.getLatLng())) {
@@ -2363,7 +2361,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
   }
 
   var timeNow = new Date();
-//   var timeSent = convert_time(newPosition.server_time); Professional. 
+  //   var timeSent = convert_time(newPosition.server_time); Professional. 
   var timeSent = convert_time(newPosition.gps_time); 
   var timeChosen = null;
 
@@ -2431,33 +2429,33 @@ function updateVehicleInfo(vcallsign, newPosition) {
 
 
   //desktop
-  var a    = '<div class="header">' +
-           '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
-           '<canvas class="graph"></canvas>' +
-           '<i class="arrow"></i></div>' +
-           '<div class="data">' +
-           '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
-        //    '<span class="vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:'+(vehicle.image_src_size[1]+55)+'px">Path</span>' + // Amateur 
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">Share</span>' : '') + 
-            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">SkewT</span>' : '') + // Professional Only
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') + 
-        //    ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:'+(vehicle.image_src_size[1]+145)+'px">Float</span>' : '') + // Amateur
-           '<div class="left">' +
-           '<dl>';
+  var a = '<div class="header">' +
+            '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
+            '<canvas class="graph"></canvas>' +
+            '<i class="arrow"></i></div>' +
+            '<div class="data">' +
+            '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
+            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:'+(vehicle.image_src_size[1]+55)+'px">Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">Share</span>' : '') + 
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">SkewT</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') + 
+            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:'+(vehicle.image_src_size[1]+145)+'px">Float</span>' : '') +
+            '<div class="left">' +
+            '<dl>';
   //mobile
-  var aa    = '<div class="header">' +
-           '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
-           '<canvas class="graph"></canvas>' +
-           '<i class="arrow"></i></div>' +
-           '<div class="data">' +
-           '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
-        //    '<span class="vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:55px">Path</span>' + // Amateur Only
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:85px">Share</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:85px">SkewT</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
-        //    ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:145px">Float</span>' : '') + Amateur Only
-           '<div class="left">' +
-           '<dl>';
+  var aa = '<div class="header">' +
+            '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
+            '<canvas class="graph"></canvas>' +
+            '<i class="arrow"></i></div>' +
+            '<div class="data">' +
+            '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
+            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:55px">Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:85px">Share</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:85px">SkewT</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
+            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:145px">Float</span>' : '') +
+            '<div class="left">' +
+            '<dl>';
   var b    = '</dl>' +
            '</div>' + // right
            '</div>' + // data
@@ -4648,7 +4646,7 @@ function refresh() {
                 }
             }
             if (query_positions.length > 0) {
-            map.fitBounds(query_positions, {'maxZoom': 8});
+                map.fitBounds(query_positions, {'maxZoom': 8});
             }
         }
 
