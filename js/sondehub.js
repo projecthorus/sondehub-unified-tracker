@@ -1283,7 +1283,7 @@ function load() {
             var img = this._createImg(this.options['iconUrl']);
             var numdiv = document.createElement('div');
             numdiv.setAttribute ( "class", "number" );
-            numdiv.innerText = this.options['number'] || ''; // innerHTML in Amateur. I feel like it should be innerText
+            numdiv.innerText = this.options['number'] || '';
             div.appendChild ( img );
             div.appendChild ( numdiv );
             this._setIconStyles(div, 'icon');
