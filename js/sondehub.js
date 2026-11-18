@@ -3723,26 +3723,7 @@ function addPosition(position) {
                 })
             ];
         }
-        else if(vcallsign == "XX") { // Amateur
-            vehicle_type = "xmark";
-            image_src = host_url + markers_url + "balloon-xmark.png";
-            image_src_size = [48,38];
-            image_src_offset = [0,-38];
-
-            xmarkIcon = new L.icon({
-                iconUrl: image_src,
-                iconSize: image_src_size,
-                iconAnchor: [24, 18],
-            });
-
-            marker = new L.Marker(point, {
-                icon: xmarkIcon,
-                title: vcallsign,
-                zIndexOffset: Z_CAR,
-            });
-
-            marker.addTo(map);
-        } else {
+        else {
             vehicle_type = "balloon";
             let colorHash = 0;
             for (let i = 0; i < vcallsign.length; i++){ // Professional 
@@ -5815,9 +5796,7 @@ function updatePredictions(r) {
     var i = 0, ii = r.length;
     for(; i < ii; i++) {
         var vcallsign = r[i].vehicle;
-
-        if(vcallsign == "XX") continue;
-
+        
 		if(vehicles.hasOwnProperty(vcallsign)) {
             var vehicle = vehicles[vcallsign];
             if (isProfessional()) {
