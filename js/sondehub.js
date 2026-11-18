@@ -1131,7 +1131,7 @@ function load() {
          onAdd: function(map) {
             var div = L.DomUtil.create('div');
     
-            div.innerHTML = `<select name="modulationfilter" id="modulationfilter" style="width:auto !important;height:30px;" onchange="sidebar_update(this.value);lhash_update();">
+            div.innerHTML = `<select class="amateur-element" name="modulationfilter" id="modulationfilter" style="width:auto !important;height:30px;" onchange="sidebar_update(this.value);lhash_update();">
                 <option value="all">All</option>
                 <option value="APRS">APRS</option>
                 <option value="Horus Binary">Horus Binary</option>
