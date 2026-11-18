@@ -1190,7 +1190,7 @@ $(window).ready(function() {
 });
 
 function check_version(){ // Professional Only
-    const updateRequest = new Request("/js/version.json");
+    const updateRequest = new Request("js/version.json");
     fetch(updateRequest)
         .then(function(response){ return response.json()})
         .then(function(response){
