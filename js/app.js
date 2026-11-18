@@ -6,6 +6,15 @@ var is_mobile = false;
 // hash url
 var history_supported = (typeof history !== 'undefined');
 
+var searchbox = document.querySelector("header .search input[type='text']");
+
+if (isProfessional()) {
+    searchbox.setAttribute("placeholder", "Sonde Serial");
+}
+else if (isAmateur()) {
+    searchbox.setAttribute("placeholder", "Callsign");
+}
+
 function lhash_update(history_step) {
     history_step = !!history_step;
 
