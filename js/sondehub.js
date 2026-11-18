@@ -5932,18 +5932,7 @@ function update(response, none) {
 
         return;
     }
-
-    // This is not required for sondehub-amateur?
-    if (sondePrefix.indexOf(wvar.query) > -1) {
-        for (var i = response.positions.position.length - 1; i >= 0; i--) {
-            try {
-                if (!response.positions.position[i].type.includes(wvar.query)) {
-                    response.positions.position.splice(i, 1)
-                }
-            } catch (e) {}
-        }
-    }
-
+    
     ssdv = (!response.ssdv) ? {} : response.ssdv;
 
     // create a dummy response object for postions
