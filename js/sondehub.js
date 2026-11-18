@@ -4942,7 +4942,7 @@ function liveData() {
 }
 
 setInterval(function(){
-    if (isAmateur() || map) { // map check only in professional
+    if (map) { 
         update(live_data_buffer);
     }
 
@@ -5006,8 +5006,12 @@ function refreshSingleNew(serial) { // Only in Professional
     }
   
     ajax_inprogress_single_new = true;
-  
-    var data_str = "duration=3d&serial=" + serial;
+    
+    if (isProfessional()) {
+        var data_str = "duration=3d&serial=" + serial;
+    } else {
+        var data_str = "duration=3d&payload_callsign=" + serial;
+    }
 
     var xhr = new XMLHttpRequest();
 
@@ -5030,19 +5034,21 @@ function refreshSingleNew(serial) { // Only in Professional
           clearTimeout(periodical_focus_new);
           ajax_inprogress_single_new = false;
           // check if we have been redirected for history - if not we can also fetch that if it exists
-          if (xhr.responseURL.includes(newdata_url)){
-            $.ajax({
-                type: "GET",
-                url: "https://history.sondehub.org/serial/"+ encodeURIComponent(serial) +".json.gz",
-                dataType: "json",
-                success: function(data, textStatus) {
-                  response = formatData(data, false);
-                  update(response, true);
-                },
-                error: function() {
-                }
-            })
-          }
+          if (isProfessional()) {
+            if (xhr.responseURL.includes(newdata_url)){
+                $.ajax({
+                    type: "GET",
+                    url: "https://history.sondehub.org/serial/"+ encodeURIComponent(serial) +".json.gz",
+                    dataType: "json",
+                    success: function(data, textStatus) {
+                    response = formatData(data, false);
+                    update(response, true);
+                    },
+                    error: function() {
+                    }
+                })
+            }
+        }
       }
     });
 }
@@ -5378,13 +5384,7 @@ function updateChase(r) {
     response.positions.position = dataTemp;
     response.fetch_timestamp = Date.now();
     if (response.positions.position.length > 0) {
-        // I don't know what this method is
-        if (isProfessional()) {
-            live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,response.positions.position);
-        }
-        else if (isAmateur()){
-            update(response);
-        }
+        live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,response.positions.position);
     }
 }
 
