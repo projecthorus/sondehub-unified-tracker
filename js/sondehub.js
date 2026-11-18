@@ -1989,9 +1989,6 @@ function stopFollow(no_data_reset) {
 	if(follow_vehicle !== null) {
         if(!no_data_reset) {
             focusVehicle(null);
-            if (isProfessional()) {
-                hideHorizonRings();
-            }
 
             // remove target mark
             $("#main .row.follow").removeClass("follow");
