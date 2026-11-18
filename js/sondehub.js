@@ -124,24 +124,80 @@ var notamOverlay = null;
 
 var svgRenderer = L.svg();
 
-var modeList = [
-//    "Position",
-    "0",
-    "15s",
-    "1m",
-    "30m",
-    "1h",
-    "3h",
-    "6h",
-    "12h",
-    "1d",
-    "3d",
-    // Professional only goes up to 3 days. Amateur goes up to a year
-    "7d", 
-    "31d", // New time periods, as of 2023-04, only available if filtering is on.
-    "186d",
-    "366d"
-];
+var modeList = {
+    // "Position",
+    "0": {
+        "name": "Live only",
+        "isActive": true,
+    },
+    "15s": {
+        "name": "15 seconds",
+        "isActive": false,
+    },
+    "1m": {
+        "name": "1 minute",
+        "isActive": false,
+    },
+    "30m": {
+        "name": "30 minutes",
+        "isActive": false,
+    },
+    "1h": {
+        "name": "1 hour",
+        "isActive": true,
+    },
+    "3h": {
+        "name": "3 hours",
+        "isActive": true,
+    },
+    "6h": {
+        "name": "6 hours",
+        "isActive": true,
+    },
+    "12h": {
+        "name": "12 hours",
+        "isActive": true,
+    }, 
+    "1d": {
+        "name": "1 day",
+        "isActive": isAmateur(),
+    }, 
+    "3d": {
+        "name": "3 days",
+        "isActive": isAmateur(),
+    },
+    "7d": {
+        "name": "7 days",
+        "isActive": isAmateur(),
+    }, 
+    "31d": {
+        "name": "1 month",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    }, 
+    "186d": {
+        "name": "6 months",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    },
+    "366d": {
+        "name": "1 month",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    }
+}
+
+function setTimePeriod(text) {
+    if(!modeList[text] || !modeList[text].isActive || modeList[text].isLongMode) {
+        return (is_mobile) ? modeDefaultMobile : modeDefault;
+    }
+    return text;
+}
+
+function isLongMode(text) {
+    return modeList[text].isLongMode;
+}
+
 // Professional
 var modeDefault = "3h";
 var modeDefaultMobile = "1h";
@@ -150,8 +206,6 @@ if (isAmateur()) {
     var modeDefault = "12h";
     var modeDefaultMobile = "12h";
 }
-var longModes = ['31d', '186d', '366d']; // These modes only available if filtering is on.
-
 
 // order of map elements
 var Z_RANGE = 1;
@@ -861,7 +915,7 @@ function clean_refresh(text, force, history_step) {
     } catch (err) {}
 
     // reset mode if, invalid mode is specified
-    if(modeList.indexOf(text) == -1) text = (is_mobile) ? modeDefaultMobile : modeDefault;
+    text = setTimePeriod(text);
 
     wvar.mode = text;
     document.getElementById("timeperiod").value = text;
@@ -989,22 +1043,28 @@ function load() {
         onAdd: function(map) {
             var div = L.DomUtil.create('div');
     
-            // Fix this shit, lol. There's a list of the options...
             // Default for Pro = 3 h
             // Default for Amateur = 1 day
-            div.innerHTML = `<select name="timeperiod" id="timeperiod" style="width:auto !important;height:30px;" onchange="clean_refresh(this.value)">
-                    <option value="0">Live Only</option>
-                    <option value="1h">1 hour</option>
-                    <option value="3h">3 hours</option>
-                    <option value="6h">6 hours</option>
-                    <option value="12h">12 hours</option>
-                    <option value="1d" selected="selected">1 day</option>
-                    <option value="3d">3 days</option>
-                    <option value="7d">7 days</option>
-                    <option value="31d" disabled>1 month</option>
-                    <option value="186d" disabled>6 months</option>
-                    <option value="366d" disabled>1 year</option>
-                </select>`;
+
+            var selectbox = document.createElement("select");
+            selectbox.id = "timeperiod"
+            selectbox.name = "timeperiod"
+            selectbox.setAttribute("onchange", "clean_refresh(this.value)");
+            selectbox.style = "width:auto !important;height:30px;";
+
+            for (const [key, value] of Object.entries(modeList)) {
+                if (value.isActive) {
+                    var option = document.createElement("option");
+                    option.value = key;
+                    option.innerText = value.name;
+
+                    if (value.isLongMode) {
+                        option.disabled = true;
+                    }
+                    selectbox.appendChild(option)
+                }
+            }
+            div.appendChild(selectbox);
             div.innerHTML.onload = setTimeValue();
 
             return div;
@@ -1285,7 +1345,7 @@ function setLongTimePeriods(state){
     $("#timeperiod option").each(function() {
         var $thisOption = $(this);
     
-        if(longModes.includes($thisOption.val())){
+        if(isLongMode($thisOption.val())){
             if(state){
                 $thisOption.attr("disabled", false);
             } else {

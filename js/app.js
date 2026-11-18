@@ -152,8 +152,7 @@ function load_hash(no_refresh) {
                 def.focus = v;
                 break;
             case "qm":
-                def.mode = v.replace(/_/g, ' ');
-                if(modeList.indexOf(def.mode) == -1) def.mode = (is_mobile) ? modeDefaultMobile : modeDefault;
+                def.mode = setTimePeriod(v.replace(/_/g, ' '));
                 break;
             case "q":
                 if (isProfessional()) {
