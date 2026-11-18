@@ -4647,7 +4647,9 @@ function refresh() {
                     query_positions.push(vehicles[veh].positions[vehicles[veh].positions.length-1]);
                 }
             }
+            if (query_positions.length > 0) {
             map.fitBounds(query_positions, {'maxZoom': 8});
+            }
         }
 
     }
