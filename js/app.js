@@ -1261,5 +1261,5 @@ check_version(); // Professional Only
 check_banner(); // Professional Only
 update_check = setInterval(check_version, 15 * 60 * 1000) // Professional Only
 load_hash(); // Professional Only
-startAjax(); // Professional Only
+startAjax();
 load(); // Professional Only

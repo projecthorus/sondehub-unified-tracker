@@ -2953,46 +2953,47 @@ function redrawPrediction(vcallsign) {
     vehicle.prediction_polyline[1].path_length = path_length;
 
     var image_src;
-    // AH - I think I'll yeet this away, but later job.
-    // if(vcallsign != "wb8elk2") { // WhiteStar - Not sure the reasons behind a check for this? Seems odd. May be from when WB8ELK was first doing floater flights?
-        var html = "";
-        if(vehicle.prediction_target) {
-            vehicle.prediction_target.setLatLng(latlng);
-        } else {
-            image_src = recolorSVG(host_url + markers_url + "target.svg", balloon_colors[vehicle.color_index]);
-            predictionIcon = new L.icon({
-                iconUrl: image_src,
-                iconSize: [20,20],
-                iconAnchor: [10, 10],
-            });
-            vehicle.prediction_target = new L.Marker(latlng, {
-                zIndexOffset: Z_SHADOW,
-                icon: predictionIcon,
-            })//.addTo(map); // commented out in professional, so I'll comment it out here
-            vehicle.prediction_target.on('click', function (e) {
-                mapInfoBox_handle_prediction(e);
-            });
-        }
-        vehicle.prediction_target.pdata = data[data.length-1];
-        if(vehicle.prediction.descent_rate == null){
+    var html = "";
+    if (vehicle.prediction_target) {
+        vehicle.prediction_target.setLatLng(latlng);
+    } else {
+        image_src = recolorSVG(host_url + markers_url + "target.svg", balloon_colors[vehicle.color_index]);
+        predictionIcon = new L.icon({
+            iconUrl: image_src,
+            iconSize: [20,20],
+            iconAnchor: [10, 10],
+        });
+        vehicle.prediction_target = new L.Marker(latlng, {
+            zIndexOffset: Z_SHADOW,
+            icon: predictionIcon,
+        })//.addTo(map); // commented out in professional, so I'll comment it out here
+        vehicle.prediction_target.on('click', function (e) {
+            mapInfoBox_handle_prediction(e);
+        });
+    }
+    vehicle.prediction_target.pdata = data[data.length-1];
+    if (vehicle.prediction.descent_rate == null) {
             vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Float\n";
-        } else {
-            if(vehicle.prediction.descending == 1){
-                vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n"
-                if (offline.get('opt_imperial')){
-                    vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
-                } else {
-                    vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
-                }
-                
-        } else {
+    }
+    else {
+        if(vehicle.prediction.descending == 1){
+            vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n"
+            if (offline.get('opt_imperial')){
+                vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
+            }
+            else {
+                vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
+            }
+        } 
+        else {
             if (offline.get('opt_imperial')){
                 vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + (vehicle.prediction.ascent_rate * 3.2808399).toFixed(1) + " ft/s \n" + 
                     "<b>Burst Altitude:</b> " + (vehicle.prediction.burst_altitude * 3.2808399).toFixed(0) + " ft\n" + 
                     "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
                 
-            } else {
+            }
+            else {
                 vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + vehicle.prediction.ascent_rate.toFixed(1) + " m/s \n" + 
                     "<b>Burst Altitude:</b> " + vehicle.prediction.burst_altitude.toFixed(0) + " m\n" + 
@@ -3001,7 +3002,7 @@ function redrawPrediction(vcallsign) {
         }
     }
 
-    if(burst_index !== 0) { // Amateur had  "&& vcallsign != "wb8elk2"", but I removed that because it looks legacy
+    if (burst_index !== 0) {
         if(vehicle.prediction_burst) {
             vehicle.prediction_burst.setLatLng(latlng_burst);
         } else {
