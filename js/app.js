@@ -114,14 +114,14 @@ function load_hash(no_refresh) {
 
         switch(k) {
             case "mt":
-                if( baseMaps.hasOwnProperty(v) && (map || isAmateur())) { // Map condition in Professional Only
+                if(map && baseMaps.hasOwnProperty(v)) {
                     map.removeLayer(baseMaps[selectedLayer]);
                     selectedLayer = v;
                     map.addLayer(baseMaps[v]);
                 }
                 break;
             case "mz":
-                if (map || isAmateur()) { // Map condition in Professional Only
+                if (map) {
                     map.setZoom(parseInt(v));
                 }
                 break;
@@ -130,7 +130,7 @@ function load_hash(no_refresh) {
                 manual_pan = true;
                 v = v.split(',');
                 var latlng = new L.LatLng(v[0], v[1]);
-                if (map || isAmateur()) { // Map condition in Professional Only
+                if (map) {
                     map.panTo(latlng);
                 }
                 break;
@@ -184,7 +184,7 @@ function load_hash(no_refresh) {
 
     $.extend(true, wvar, def);
     // Map condition and nested if statements only in professional
-    if(map || isAmateur()){
+    if(map){
         if (!def["box"]){
             $(".flatpage").hide()
         } else {
@@ -264,10 +264,6 @@ function trackerInit() {
     // if we there is enough screen space open aboutbox on startup
     if(isProfessional() && !is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) { // Professonal Only
         $('.nav li.about').click(); 
-    }
-
-    if (isAmateur() && map){ // Amateur only
-        return; 
     }
 
     if(is_mobile || wvar.enabled) $(".nav .wvar").hide();
