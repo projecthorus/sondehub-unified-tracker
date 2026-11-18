@@ -57,7 +57,7 @@ function lhash_update(history_step) {
         hash += "&box="+wvar.box;
     }
     // Amateur Only
-    if (isAmateur() && document.getElementById("modulationfilter").value != "all"){
+    if (document.getElementById("modulationfilter").value != "all"){
         hash += "&mo=" + document.getElementById("modulationfilter").value;
     }
 
@@ -289,7 +289,7 @@ function trackerInit() {
         lhash_update(true); // Professional Only
     }
     else if(!map) { // Amateur Only
-         load(); 
+        load(); 
     }
 }
 
@@ -448,9 +448,6 @@ var positionUpdateHandle = function(position) {
             ChaseCar.updatePosition(callsign, position);
             CHASE_timer = (new Date()).getTime() + 15000;
         }
-    }
-    else if (isAmateur()) { // Amateur only
-        return; 
     }
 
     // add/update marker on the map (sondehub.js)
@@ -645,23 +642,21 @@ $(window).ready(function() {
     });
 
     // Amateur only
-    if (isAmateur()) {
-        $("#main").on('click','.row .data .sbutton.hysplit', function(event) {
-            event.stopPropagation();
+    $("#main").on('click','.row .data .sbutton.hysplit', function(event) {
+        event.stopPropagation();
 
-            var elm = $(this);
-            var name = elm.attr('data-vcallsign');
+        var elm = $(this);
+        var name = elm.attr('data-vcallsign');
 
-            if(elm.hasClass("active")) {
-                elm.removeClass('active');
-                processHysplit(name, false);
-            }
-            else {
-                elm.addClass('active');
-                processHysplit(name, true);
-            }
-        });
-    }
+        if(elm.hasClass("active")) {
+            elm.removeClass('active');
+            processHysplit(name, false);
+        }
+        else {
+            elm.addClass('active');
+            processHysplit(name, true);
+        }
+    });
 
     // reset nite-overlay and timebox when mouse goes out of the graph box
     $("#telemetry_graph").on('mouseout','.holder', function() {
@@ -776,7 +771,7 @@ $(window).ready(function() {
             e.removeClass('on').addClass('off');
 
             // Amateur only
-            if(isAmateur() && navigator.geolocation) {
+            if(navigator.geolocation) {
                 navigator.geolocation.clearWatch(CHASE_enabled);
             }
             CHASE_enabled = null;
