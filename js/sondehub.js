@@ -5524,7 +5524,7 @@ function updateReceivers(r, single) {
         i = 0;
         for(; i < receivers.length;) {
             var e = receivers[i];
-            if(e.fresh && !offline.get("opt_hide_receivers")) { // hide recievers only in Professional
+            if(e.fresh && !offline.get("opt_hide_receivers")) {
                 e.fresh = false;
                 i++;
             }
@@ -5850,7 +5850,6 @@ function refreshUI() {
 function hideHorizonRings(){
     for(var vcallsign in vehicles) {
         if(vehicles[vcallsign].vehicle_type == "balloon"){
-            // Amateur checks each attribute, professional doesn't
             if (vehicles[vcallsign].horizon_circle){
                 map.removeLayer(vehicles[vcallsign].horizon_circle);
             }
