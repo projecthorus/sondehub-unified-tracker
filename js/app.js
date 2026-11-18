@@ -295,7 +295,6 @@ function trackerInit() {
 // load the app after a 3s timeout
 var initTimer = setTimeout(trackerInit, 3000);
 
-var listScroll;
 var GPS_ts = null;
 var GPS_lat = null;
 var GPS_lon = null;
@@ -672,7 +671,6 @@ $(window).ready(function() {
             e.removeClass('active');
             e.find('.data').hide();
 
-            listScroll.refresh();
 
             // disable following only we are collapsing the followed vehicle
             if(follow_vehicle !== null && follow_vehicle == e.attr('data-vcallsign')) {
@@ -683,12 +681,11 @@ $(window).ready(function() {
             e.addClass('active');
             e.find('.data').show();
 
-            listScroll.refresh();
 
             // auto scroll when expanding an item
             if($('.portrait:visible').length) {
                 var eName = "." + e.parent().attr('class') + " ." + e.attr('class').match(/vehicle\d+/)[0];
-                listScroll.scrollToElement(eName);
+                $(eName)[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
             }
 
             // pan to selected vehicle

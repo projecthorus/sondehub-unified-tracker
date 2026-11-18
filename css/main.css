@@ -982,6 +982,6 @@ header .search form input[type='submit'] {
 
 /* scroll sidebar */
 .scrollwrapper {
-    overflow: scroll;
+    overflow-y: scroll;
     height: 100%;
 }

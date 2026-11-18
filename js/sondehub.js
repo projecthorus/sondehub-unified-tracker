@@ -954,7 +954,6 @@ function clean_refresh(text, force, history_step) {
         '<div class="row vehicle'+elm_uuid+'" id="spinner"><div class="header empty">' +
         '<img style="width:90px;height:30px" src="img/hab-spinner.gif"/></div></div>'
     );
-    listScroll.refresh();
 
     lhash_update(history_step);
 
@@ -3707,8 +3706,7 @@ function addPosition(position) {
                 _vehicle_id = e.target.options.title;
                 _vehicle_idname = ".vehicle"+vehicles[_vehicle_id].uuid;
                 $(_vehicle_idname).addClass('active');
-                listScroll.refresh();
-                listScroll.scrollToElement(_vehicle_idname, 0);
+                $(_vehicle_idname + ":visible")[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
                 panTo(vcallsign);
                 clearTimeout(periodical_focus_new);
                 refreshSingleNew(_vehicle_id);
@@ -3774,8 +3772,7 @@ function addPosition(position) {
                 $(".row.active").removeClass('active');
                 _vehicle_idname = ".vehicle"+vehicles[e.target.options.payload].uuid;
                 $(_vehicle_idname).addClass('active');
-                listScroll.refresh();
-                listScroll.scrollToElement(_vehicle_idname, 0);
+                $(_vehicle_idname + ":visible")[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
                 followVehicle($(_vehicle_idname).attr('data-vcallsign'));
             };
 
@@ -5976,7 +5973,6 @@ function update(response, none) {
                     // remember last position for each vehicle
                     ctx.lastPPointer.push(vehicle.curr_position);
 
-                    if(listScroll) listScroll.refresh();
                     if(zoomed_in && follow_vehicle == vcallsign && !manual_pan) panTo(follow_vehicle);
                     if (follow_vehicle == vcallsign) {
                         update_lookangles(follow_vehicle);
@@ -6065,8 +6061,7 @@ function zoom_on_payload() {
     $('.vehicle'+target.uuid).addClass('active');
 
     // scroll list to the expanded element
-    listScroll.refresh();
-    listScroll.scrollToElement('.portrait .vehicle'+target.uuid, 0);
+    $('.vehicle'+target.uuid)[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
 
     zoomed_in = true;
 }
