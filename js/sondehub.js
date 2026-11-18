@@ -951,7 +951,7 @@ function clean_refresh(text, force, history_step) {
 
     // Combined (Probably Pro version is fine)
     $(".scrollwrapper").append(
-        '<div class="row vehicle'+elm_uuid+'"> id="spinner"><div class="header empty">' +
+        '<div class="row vehicle'+elm_uuid+'" id="spinner"><div class="header empty">' +
         '<img style="width:90px;height:30px" src="img/hab-spinner.gif"/></div></div>'
     );
     listScroll.refresh();
