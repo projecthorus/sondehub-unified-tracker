@@ -7,3 +7,5 @@
 tiles/
 .DS_Store
 js/sondehubType.js
+manifest.json
+opensearchspec.xml

@@ -27,7 +27,7 @@ ChaseCar.updatePosition = function(callsign, position) {
     _position_alt = ((!!position.coords.altitude) ? position.coords.altitude : 0);
 
     var _doc = {
-        "software_name": isProfessional() ? "SondeHub Tracker" : "SondeHub-Amateur",
+        "software_name": sondehubTypeName,
         "software_version": document.body.dataset.version,
         "uploader_callsign": callsign,
         "uploader_position": [position.coords.latitude, position.coords.longitude, _position_alt],
@@ -146,7 +146,7 @@ ChaseCar.markRecovered = function(){
         "planned": _planned,
         "recovered_by": _callsign,
         "description": _notes,
-        "recovery_software": "Sondehub Tracker"
+        "recovery_software": sondehubTypeName
     };
 
 

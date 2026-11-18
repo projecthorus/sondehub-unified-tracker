@@ -1362,7 +1362,7 @@ function setTimeValue() {
 function shareVehicle(callsign) {
     const shareData = {
         title: 'SondeHub: ' + vehicles[callsign].marker.options.title + ' Flight Information',
-        text: 'You can view the flight path and sensor data for ' + vehicles[callsign].marker.options.title + ' on the SondeHub tracker!',
+        text: 'You can view the flight path and sensor data for ' + vehicles[callsign].marker.options.title + ' on the ' + sondehubTypeName + '!',
         url: window.location.origin + '/' + callsign,
     }
     try {

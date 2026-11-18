@@ -36,6 +36,14 @@ echo -n "Generating index.html... "
 sed -e "s/{VER}/$VERSION/" -e "s/{BUILD_DATE}/$BUILD_DATE/" -e "s/{TYPE}/$TYPE/" -e "s/{TYPE_NAME}/$TYPE_NAME/" index.template.html > index.html
 echo "Done!"
 
+echo -n "Generating opensearchspec.xml... "
+sed -e "s/{TYPE_NAME}/$TYPE_NAME/" opensearchspec.template.xml > opensearchspec.xml
+echo "Done!"
+
+echo -n "Generating manifest.json... "
+sed -e "s/{TYPE_NAME}/$TYPE_NAME/" manifest.template.json > manifest.json
+echo "Done!"
+
 # cache fixes
 echo -n "Generating sondehubType.js... "
 sed -e "s/{TYPE}/$TYPE/" sondehubType.template.js > js/sondehubType.js
