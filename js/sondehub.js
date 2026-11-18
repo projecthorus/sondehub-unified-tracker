@@ -2436,8 +2436,8 @@ function updateVehicleInfo(vcallsign, newPosition) {
             '<div class="data">' +
             '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
             '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:'+(vehicle.image_src_size[1]+55)+'px">Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+55)+'px">SkewT</span>' : '') +
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">Share</span>' : '') + 
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">SkewT</span>' : '') +
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') + 
             ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:'+(vehicle.image_src_size[1]+145)+'px">Float</span>' : '') +
             '<div class="left">' +
@@ -2450,8 +2450,8 @@ function updateVehicleInfo(vcallsign, newPosition) {
             '<div class="data">' +
             '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
             '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:55px">Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:55px">SkewT</span>' : '') +
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:85px">Share</span>' : '') +
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:85px">SkewT</span>' : '') +
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
             ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:145px">Float</span>' : '') +
             '<div class="left">' +
@@ -2484,8 +2484,10 @@ function updateVehicleInfo(vcallsign, newPosition) {
            '<dt>'+formatDate(stringToDateUTC(newPosition.gps_time))+'</dt><dd>datetime (viewer local)</dd>' +
            '<dt>'+coords_text+'</dt><dd>coordinates</dd>' +
            // Enabling use of the larger data store 
-           habitat_data(vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + // Professional Only
-        //    habitat_data(newPosition.data) + // Amateur Only
+           // habitat_data(vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + // Professional Only
+           // habitat_data(newPosition.data) + // Amateur Only
+           // newPosition.data seems to always be the same as vehicle.data_fields, except when it's null, and then vehicle.data_fields is an empty object
+           habitat_data(newPosition.data ?? vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + 
            c + // receivers if any
            '';
 
