@@ -1264,7 +1264,6 @@ function load() {
             lhash_update();
         });
 
-        startAjax(); // Seemingly commented out in Pro. Not in Amateur
         liveData();
     };
 
@@ -5254,8 +5253,6 @@ var periodical_predictions = null; // Periodical_predictions and periodical_reco
 var timer_seconds = 30;
 
 function startAjax() {
-    document.getElementById("timeperiod").disabled = true; // Only in Amateur
-
     // prevent insane clicks to start numerous requests
     clearTimeout(periodical);
     clearTimeout(periodical_focus);
