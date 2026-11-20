@@ -50,7 +50,7 @@ function lhash_update(history_step) {
     }
 
     // Professional Only 
-    if(isProfessional() && wvar.nena) {
+    if(wvar.nena) {
         hash += "&nena=1";
     }
     if(wvar.box) { // We just need something to change so we can trigger the back button correctly

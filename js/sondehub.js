@@ -5638,9 +5638,6 @@ function updateLeaderboardPane(r){ // Only in Professional
 }
 
 function updateLaunchPredictions(r) { // Only in Professional
-    if (!isProfessional()) {
-        return;
-    }
     for (serial in r) {
         prediction = r[serial];
         if(vehicles.hasOwnProperty(serial)) {
@@ -5663,42 +5660,26 @@ function updatePredictions(r) {
         
 		if(vehicles.hasOwnProperty(vcallsign)) {
             var vehicle = vehicles[vcallsign];
-            if (isProfessional()) {
-                if(vehicle.prediction && vehicle.prediction.time == r[i].time) continue;
-                vehicle.prediction = r[i];
-                vehicle.prediction.data = $.parseJSON(r[i].data);
 
-                // Figure out local ground level.
-                if(vehicle.prediction.data.length >= 2){
-                    vehicle.local_ground_asl = vehicle.prediction.data[vehicle.prediction.data.length-1]['alt'];
-                } else {
-                    vehicle.local_ground_asl = 0;
-                }
+            if(vehicle.prediction && vehicle.prediction.time == r[i].time) continue;
+            vehicle.prediction = r[i];
+            vehicle.prediction.data = $.parseJSON(r[i].data);
 
-                // Only draw prediction if the last known position of the payload was > 100m above local ground level.
-                if( (vehicle.curr_position['gps_alt']-vehicle.local_ground_asl) > 100){
-                    redrawPrediction(vcallsign);
-                } else {
-                    continue;
-                }
+            // Figure out local ground level.
+            if(vehicle.prediction.data.length >= 2 && vehicle.prediction.descent_rate){
+                vehicle.local_ground_asl = vehicle.prediction.data[vehicle.prediction.data.length-1]['alt'];
+            } else {
+                vehicle.local_ground_asl = 0;
             }
-            else if (isAmateur()) {
-                if(vehicle.marker.mode == "landed") {
-                    removePrediction(vcallsign);
-                    continue;
-                }
 
-                if(vehicle.prediction && vehicle.prediction.time == r[i].time) {
-                    continue;
-                }
-                vehicle.prediction = r[i];
-                if(parseInt(vehicle.prediction.landed) === 0) {
-                    vehicle.prediction.data = $.parseJSON(r[i].data);
-                    redrawPrediction(vcallsign);
-                } else {
-                    removePrediction(vcallsign);
-                }
+            // Only draw prediction if the last known position of the payload was > 100m above local ground level.
+            if( (vehicle.curr_position['gps_alt']-vehicle.local_ground_asl) > 100){
+                redrawPrediction(vcallsign);
+            } else {
+                continue;
             }
+        
+            
 	    }
 	}
 }
