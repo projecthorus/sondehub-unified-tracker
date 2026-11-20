@@ -1505,29 +1505,23 @@ function habitat_data(jsondata, data_ages, current_timestamp, alternative) {
 
     var tooltips = {
         "burst_timer": "If active, this indicates the time (HH:MM:SS) until the radiosonde will automatically power-off.",
+        "frequency": "Estimated frequency of the transmitter, may be impacted by receiver frequency inaccuracies.",
+        "ascent_rate": "Instantaneous ascent rate, provided by the payload.",
+        "xdata": "Raw auxiliary data (as hexadecimal) from an external sensor package (often an Ozone sensor).",
+        "oif411_O3_partial_pressure": "Estimated O3 partial pressure, using nominal calibration values. +/- 1 mPa.",
+        "rs41_mainboard": "A last digit of '4' may indicate this is a new (~2023) PCB."
     };
     var hide_keys = {
         "spam": true,
         "battery_millivolts": true,
         "temperature_internal_x10": true,
         "uplink_rssi_raw": true,
+        "oif411_instrument_number": true,
+        "oif411_ext_voltage": true,
+        "cfh_instrument_number": true,
+        "cobald_instrument_number": true,
+        "cobald_sonde_number": true
     };
-
-    if (isAmateur()) {
-        tooltips.frequency = "Estimated frequency of the transmitter, may be impacted by receiver frequency inaccuracies.";
-        tooltips.ascent_rate = "Instantaneous ascent rate, provided by the payload.";
-    }
-    else if (isProfessional()) {
-        tooltips.xdata = "Raw auxiliary data (as hexadecimal) from an external sensor package (often an Ozone sensor).";
-        tooltips.oif411_O3_partial_pressure = "Estimated O3 partial pressure, using nominal calibration values. +/- 1 mPa.";
-        tooltips.rs41_mainboard = "A last digit of '4' may indicate this is a new (~2023) PCB.";
-
-        hide_keys.oif411_instrument_number = true;
-        hide_keys.oif411_ext_voltage = true;
-        hide_keys.cfh_instrument_number = true;
-        hide_keys.cobald_instrument_number = true;
-        hide_keys.cobald_sonde_number = true;
-    }
 
   var suffixes = globalSuffixes;
 
