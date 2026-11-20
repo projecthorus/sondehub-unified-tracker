@@ -71,15 +71,17 @@ function updateLegend(pos) {
         // adjust index for null data points
         var null_count = 0;
 
-        if (!map.hasLayer(polyMarker) && polyMarker) {
+        if (polyMarker && !map.hasLayer(polyMarker)) {
             map.addLayer(polyMarker);
         }
 
         if(outside && pij !== undefined) {
             if(!polyMarker) {
                 try {polyMarker = new L.Marker(vehicles[follow_vehicle].prediction_polyline[0].getLatLngs()[pij]).addTo(map);} catch (e) {};
+                try {polyMarker = new L.Marker(vehicles[follow_vehicle].prediction_polyline[1].getLatLngs()[pij]).addTo(map);} catch (e) {}; // Amateur Only. It's in a try catch block, so I'm less concerned this will break stuff
             } else {
                 try {polyMarker.setLatLng(vehicles[follow_vehicle].prediction_polyline[0].getLatLngs()[pij]);} catch (e) {};
+                try {polyMarker.setLatLng(vehicles[follow_vehicle].prediction_polyline[1].getLatLngs()[pij]);} catch (e) {}; // Amateur Only. It's in a try catch block, so I'm less concerned this will break stuff
             }
             
         }
