@@ -5030,9 +5030,6 @@ function singleRecovery(serial) { // Only in Professional
 }
 
 function refreshRecoveries() { // Only in Professional
-    if (!isProfessional()){
-        return;
-    }
 
     $.ajax({
         type: "GET",
@@ -5057,10 +5054,6 @@ function refreshRecoveries() { // Only in Professional
 }
 
 function refreshRecoveryStats() { // Only in Professional
-    if (!isProfessional()){
-        return;
-    }
-
     $.ajax({
         type: "GET",
         url: recovered_sondes_stats_url,
@@ -5109,8 +5102,10 @@ function startAjax() {
     refresh();
 
     refreshPatreons();
-    refreshRecoveries(); // Only in Professional
-    refreshRecoveryStats(); // Only in Professional
+    if (isProfessional()){
+        refreshRecoveries(); // Only in Professional
+        refreshRecoveryStats(); // Only in Professional
+    }
 }
 
 function stopAjax() {
@@ -5266,10 +5261,6 @@ function updateChase(r) {
 }
 
 function showRecoveredMap(serial) { // Professional Only
-    if (!isProfessional()){
-        return;
-    }
-
     $("header .search input[type='text']").val(serial);
 
     wvar.query = serial;
