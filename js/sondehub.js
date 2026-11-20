@@ -217,63 +217,6 @@ var Z_CAR = 1000001;
 var Z_PAYLOAD = 1000002;
 var Z_RECOVERY = 1000003; // Professional
 
-// SondeHub V1 types
-
-var v1types = { // Professional
-    "RS41": "RS41",
-    "RS41-Ozone": "RS41",
-    "RS41-SGP-Ozone": "RS41-SGP",
-    "RS41-SG": "RS41-SG",
-    "RS41-SG-Ozone": "RS41-SG",
-    "RS41-SGP": "RS41-SGP",
-    "RS41-SGM": "RS41-SGM",
-    "RS41-NG": "RS41-NG",
-    "RS92": "RS92",
-    "RS92-Ozone": "RS92",
-    "IMET": "iMet-4",
-    "iMet": "iMet-4",
-    "DFM": "DFM",
-    "DFM06": "DFM06",
-    "DFM09": "DFM09",
-    "DFMxB": "DFM",
-    "DFMxC": "DFM",
-    "DFMx7": "DFMx7",
-    "DFMx9": "DFMx9",
-    "DFM17": "DFM17",
-    "DFM09P": "DFM09P",
-    "MK2LMS": "LMS6-1680",
-    "LMS6": "LMS6-400",
-    "M10": "M10",
-    ",M10": "M10",
-    "M10-Ptu": "M10",
-    "M20": "M20",
-    "MEISEI": "IMS100",
-    "IMS100": "IMS100",
-    "IMET5": "iMet-5x"
-}
-
-var v1manufacturers = { // Professional
-    "RS92": "Vaisala", 
-    "RS41": "Vaisala",
-    "RS41-SG": "Vaisala",
-    "RS41-SGP": "Vaisala",
-    "RS41-SGM": "Vaisala",
-    "RS41-NG": "Vaisala",
-    "iMet-4": "Intermet Systems",
-    "iMet-5x": "Intermet Systems",
-    "DFM": "Graw",
-    "DFM06": "Graw",
-    "DFM09": "Graw",
-    "DFMx7": "Graw",
-    "DFMx9": "Graw",
-    "DFM17": "Graw",
-    "DFM09P": "Graw",
-    "LMS6-400": "Lockheed Martin",
-    "LMS6-1680": "Lockheed Martin",
-    "M10": "Meteomodem",
-    "M20": "Meteomodem",
-    "PS20": "Meteomodem"
-}
 
 var globalKeys = {
     "ascentrate": "Ascent Rate",
@@ -4644,9 +4587,7 @@ function refresh() {
             } else {
                 response = formatData(data, false); // Amateur doesn't have 2nd parameter
                 update(response, true);   
-                $("#stTimer").attr("data-timestamp", response.fetch_timestamp);
             }
-            $("#stText").text("");
             clearInterval(checkLoadedTimer)
         }
       }, 50)
@@ -4930,8 +4871,6 @@ function liveData() {
                         var test = formatData(frame, true); // Amateur didn't have 2nd parameter
                         if (clientActive) {
                             live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,test.positions.position)
-                            $("#stTimer").attr("data-timestamp", dateNow);
-                            $("#stText").text("websocket |");
                         }
                     }
                 }
@@ -5384,7 +5323,6 @@ function updateChase(r) {
         }
     }
     response.positions.position = dataTemp;
-    response.fetch_timestamp = Date.now();
     if (response.positions.position.length > 0) {
         live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,response.positions.position);
     }

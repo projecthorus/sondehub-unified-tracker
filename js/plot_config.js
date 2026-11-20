@@ -71,7 +71,7 @@ function updateLegend(pos) {
         // adjust index for null data points
         var null_count = 0;
 
-        if (!map.hasLayer(polyMarker) && polyMarker) {
+        if (polyMarker && !map.hasLayer(polyMarker)) {
             map.addLayer(polyMarker);
         }
 
