@@ -1828,13 +1828,12 @@ function focusVehicle(vcallsign, ignoreOpt) {
     var dont_focus = !offline.get('opt_hilight_vehicle') && ignoreOpt === undefined;
 
     var opacityFocused = 1;
-    var opacityOther = 0.4;
-    if (isAmateur()) {
-        opacityOther = 0.1;
-        if (dont_focus) {
-            return;
-        }
+    var opacityOther = 0.2;
+
+    if (dont_focus) {
+        return;
     }
+
 
     for(var i in vehicles) {
         var vehicle = vehicles[i], j;
@@ -1865,6 +1864,10 @@ function focusVehicle(vcallsign, ignoreOpt) {
             }
             for(j in vehicle.polyline) {
                  vehicle.polyline[j].setStyle({opacity:opacitySet});
+            }
+            if(vehicle.prediction_polyline) {
+                vehicle.prediction_polyline[0].setStyle({opacity:opacitySet * 0.8});
+                vehicle.prediction_polyline[1].setStyle({opacity:opacitySet * 0.1});
             }
         }
     }
@@ -2798,18 +2801,6 @@ function redrawPrediction(vcallsign) {
         vehicle.prediction_polyline[0].setLatLngs(line);
         vehicle.prediction_polyline[1].setLatLngs(line);
     } else {
-        // Amateur.
-        // vehicle.prediction_polyline = [new L.Wrapped.Polyline(line, {
-        //     color: balloon_colors[vehicle.color_index],
-        //     opacity: 0.8, // Was 0.4
-        //     weight: 3,
-        // }),
-        // AH - I'm very confused why about vehicle.prediction_polyline = ...?
-        // vehicle.prediction_polyline = new L.Wrapped.Polyline(line, {
-        //     opacity: 0.1,
-        //     weight: 6,
-        //     color: "#000"
-        // })]
         vehicle.prediction_polyline = [new L.Wrapped.Polyline(line, {
             color: balloon_colors[vehicle.color_index],
             opacity: 0.8, // Was 0.4
@@ -2830,8 +2821,8 @@ function redrawPrediction(vcallsign) {
         });
 
         // Amateur. Not sure if they are needed, so I will comment them out - Vehicle polyline
-        // vehicle.prediction_polyline[0].addTo(map);
-        // vehicle.prediction_polyline[1].addTo(map);
+        vehicle.prediction_polyline[0].addTo(map);
+        vehicle.prediction_polyline[1].addTo(map);
     }
 
     vehicle.prediction_polyline[0].path_length = path_length;
@@ -4966,11 +4957,11 @@ function refreshReceivers() {
             data: data_str,
             dataType: "json",
             success: function(response, textStatus) {
-                var checkLoadedTimer = setInterval(() => { // set interval only in PRofessional
-                if (isAmateur() || map){
-                    updateReceivers(response, single=false);
-                    clearInterval(checkLoadedTimer);
-                }
+                var checkLoadedTimer = setInterval(() => { // wait until map is ready to set
+                    if (map){
+                        updateReceivers(response, single=false);
+                        clearInterval(checkLoadedTimer);
+                    }
               }, 50);
             },
             complete: function(request, textStatus) {
