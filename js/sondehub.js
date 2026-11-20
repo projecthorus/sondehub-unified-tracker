@@ -797,45 +797,12 @@ function clean_refresh(text, force, history_step) {
         $("#stText").text("");
     }
 
-    // Amateur
-    // try {
-    //     client.unsubscribe(clientTopic);
-    //     if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
-    //         // Generate array of filter entries.
-    //         var topic = wvar.query.split(",").map(function(el) { 
-    //             return 'amateur/' + el; 
-    //         });
-    //         client.subscribe(topic);
-    //         clientTopic = topic;
-    //     } else {
-    //         client.subscribe("amateur/#");
-    //         clientTopic = "amateur/#";
-    //     }
-    // } catch (err) {}
-
-    // // Professional
-    // try {
-    //     for (let topic in clientTopic){
-    //         client.unsubscribe(topic);
-    //     }
-    //     if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
-    //         var topic = "sondes/" + wvar.query;
-    //         client.subscribe(topic);
-    //         client.subscribe("prediction/"+wvar.query);
-    //         client.subscribe("reverse-prediction/"+wvar.query);
-    //         clientTopic = [topic];
-    //     } else {
-    //         client.subscribe("sondes-new/#");
-    //         clientTopic =["sondes-new/#"];
-    //     }
-    // } catch (err) {}
-
     // Combined
     try {
         for (let topic in clientTopic){
             client.unsubscribe(topic);
         }
-        var topicPrefix =  "amateur/";
+        var topicPrefix =  isProfessional() ? "sondes-new/" : "amateur/";
 
         if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
             if (isProfessional()) {
@@ -849,13 +816,10 @@ function clean_refresh(text, force, history_step) {
             client.subscribe(topic);
             clientTopic = topic;
         } else {
-            if (isProfessional()) {
-                topicPrefix = "sondes-new/"
-            }
             client.subscribe(topicPrefix + "#");
             clientTopic = [topicPrefix + "#"];
         }
-    } catch (err) {}
+    } catch (err) {console.error(err)}
 
     // reset mode if, invalid mode is specified
     text = setTimePeriod(text);
@@ -880,17 +844,6 @@ function clean_refresh(text, force, history_step) {
 
     // add loading spinner in the vehicle list
     $('#main .empty').parent().remove();
-    // Amateur
-    // $("#main .portrait,#main .landscape").append(
-    //     '<div class="row vehicle'+elm_uuid+'"><div class="header empty">' +
-    //     '<img style="width:90px;height:30px" src="img/hab-spinner.gif"/></div></div>'
-    // );
-
-    // Professional
-    // $(".scrollwrapper").append(
-    //     '<div class="row" id="spinner"><div class="header empty">' +
-    //     '<img style="width:90px;height:30px" src="img/hab-spinner.gif"/></div></div>'
-    // );
 
     // Combined (Probably Pro version is fine)
     $(".scrollwrapper").append(
