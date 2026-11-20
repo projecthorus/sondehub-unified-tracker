@@ -3625,6 +3625,7 @@ function addPosition(position) {
 
             if(wvar.nena){ // Professional
                 // All the balloon are red.
+                balloon_colors = ["#ff0000"]
                 color_index = 0;
             }
             image_src = recolorSVG(host_url + markers_url + "balloon.svg", balloon_colors[color_index]);
