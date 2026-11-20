@@ -2663,11 +2663,9 @@ function set_polyline_visibility(vcallsign, val) {
     }
     if(vehicle.prediction_launch_polyline) {
         if (val) {
-            // map.addLayer(vehicle.prediction_launch_polyline); // Amateur
             map.addLayer(vehicle.prediction_launch_polyline[0]);
             map.addLayer(vehicle.prediction_launch_polyline[1]);
         } else {
-            // map.removeLayer(vehicle.prediction_launch_polyline); // Amateur
             map.removeLayer(vehicle.prediction_launch_polyline[0]);
             map.removeLayer(vehicle.prediction_launch_polyline[1]);
         }
@@ -3953,13 +3951,9 @@ function addPosition(position) {
             if (vehicle_info["prediction_polyline"] && map.hasLayer(vehicle_info["prediction_polyline"][1])) {
                 map.removeLayer(vehicle_info["prediction_polyline"][1]);
             }
-            // Professional
-            // if (vehicle_info["prediction_launch_polyline"] && map.hasLayer(vehicle_info["prediction_launch_polyline"][0])) { 
-            //     map.removeLayer(vehicle_info["prediction_launch_polyline"][0]);
-            //     map.removeLayer(vehicle_info["prediction_launch_polyline"][1]);
-            // }
-            if (vehicle_info["prediction_launch_polyline"] && map.hasLayer(vehicle_info["prediction_launch_polyline"])) {  // Amateur
-                map.removeLayer(vehicle_info["prediction_launch_polyline"]);
+            if (vehicle_info["prediction_launch_polyline"] && map.hasLayer(vehicle_info["prediction_launch_polyline"][0])) { 
+                map.removeLayer(vehicle_info["prediction_launch_polyline"][0]);
+                map.removeLayer(vehicle_info["prediction_launch_polyline"][1]);
             }
             if (vehicle_info["prediction_target"] && map.hasLayer(vehicle_info["prediction_target"])) {
                 map.removeLayer(vehicle_info["prediction_target"]);
@@ -4746,7 +4740,6 @@ function liveData() {
 
         $("#stTimer").text(Math.round(messageRate/10) + " msg/s " + tracking_sondes + " sondes");
         $("#updatedText").text(" ");
-        var dateNow = new Date().getTime();
         try {
             if (clientActive) {
                 if(message.topic.startsWith("amateur-listener") || message.topic.startsWith("listener")){
@@ -4815,15 +4808,12 @@ function liveData() {
                     // If we switch to amateur-batch, we should use
                     var frame = JSON.parse(message.payloadString.toString()); // commented out in amateur, I'll go with it and see if anything dies.
 
-                    // Single frame, as we are not using amateur-batch
-                    if (isAmateur()) {
-                        frame = [{"1": frame }];
-                    }
                     // If statement only in Professional, contents in both.
-                    if (isAmateur() || wvar.query == "" || sondePrefix.indexOf(wvar.query) > -1 || wvar.query == frame.serial) {
+                    if (wvar.query == "" || sondePrefix.indexOf(wvar.query) > -1 || wvar.query == frame.serial) {
                         var test = formatData(frame, true); // Amateur didn't have 2nd parameter
                         if (clientActive) {
                             live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,test.positions.position)
+                            $("#stText").text("websocket |");
                         }
                     }
                 }
