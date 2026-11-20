@@ -1684,18 +1684,17 @@ function updateAltitude(vcallsign) {
 }
 
 function updateZoom() {
-    if (isProfessional()) {
-        for (x in launches._layers){
-            launches.getLayer(x).setRadius(Math.min(map.getZoom(),8))
-        }
-        for (x in receivers){
-            var radius = 6;
-            if (receivers[x].name in pledges){
-                radius = radius * 1.3
-            }
-            receivers[x].marker.setRadius(Math.min(map.getZoom(),radius))
-        }
+    for (x in launches._layers){
+        launches.getLayer(x).setRadius(Math.min(map.getZoom(),8))
     }
+    for (x in receivers){
+        var radius = 6;
+        if (receivers[x].name in pledges){
+            radius = radius * 1.3
+        }
+        receivers[x].marker.setRadius(Math.min(map.getZoom(),radius))
+    }
+
     for(var vcallsign in vehicles) {
         var vehicle = vehicles[vcallsign];
 

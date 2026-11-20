@@ -177,7 +177,8 @@ function load_hash(no_refresh) {
                 break;
             // Amateur Only
             case "mo":
-                document.getElementById("modulationfilter").value = v;
+                // TODO / broken because pro method of loading means that this element isn't ready yet.
+                //document.getElementById("modulationfilter").value = v;
                 sidebar_update();
                 break;
         }
