@@ -253,24 +253,23 @@ for(var idx in params) {
 // loads the tracker interface
 function trackerInit() {
     // update current position if we geolocation is available
-    if (isProfessional()) {
-        if(currentPosition) { // Professional Only
-            updateCurrentPosition(currentPosition.lat, currentPosition.lon); 
-        }
-
-        if (currentPosition && manual_pan == false){ // Professional Only
-            coords = [currentPosition.lat, currentPosition.lon]
-            zoomLevel = 9;
-            map.setView(coords, zoomLevel, {animate: false});
-        }
+    if(currentPosition) {
+        updateCurrentPosition(currentPosition.lat, currentPosition.lon); 
     }
+
+    if (currentPosition && manual_pan == false){
+        coords = [currentPosition.lat, currentPosition.lon]
+        zoomLevel = 9;
+        map.setView(coords, zoomLevel, {animate: false});
+    }
+
 
     $('#loading,#settingsbox,#aboutbox,#embedbox,#chasebox').hide(); // welcome screen //embedbox only in amateur
     $('header,#main').show(); // interface elements
     checkSize();
 
     // if we there is enough screen space open aboutbox on startup
-    if(isProfessional() && !is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) { // Professonal Only
+    if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) {
         $('.nav li.about').click(); 
     }
 
@@ -284,12 +283,9 @@ function trackerInit() {
 
         return;
     }
-    if (isProfessional()) {
-        lhash_update(true); // Professional Only
-    }
-    else if(!map) { // Amateur Only
-        load(); 
-    }
+    
+    lhash_update(true); // Professional Only
+
 }
 
 // load the app after a 3s timeout
