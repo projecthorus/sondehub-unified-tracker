@@ -234,9 +234,6 @@ function formatData(data, live) { // Amateur didn't have live
                         }
                     }
                 }
-                if (data[entry].serial.toLowerCase() != "xxxxxxxx") {
-                    dataTemp.push(dataTempEntry);
-                }
             }
         } else if (data.length == null) { // Elasticsearch
             for (let key in data) {
@@ -344,9 +341,6 @@ function formatData(data, live) { // Amateur didn't have live
                                         }
                                     }
                                 }
-                            }
-                            if (data[key][i].serial.toLowerCase() != "xxxxxxxx") {
-                                dataTemp.push(dataTempEntry);
                             }
                         }
                     }
