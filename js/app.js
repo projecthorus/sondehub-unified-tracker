@@ -530,22 +530,6 @@ var format_coordinates = function(lat, lon, name) {
     a.innerText = roundNumber(lat, 5) + ', ' + roundNumber(lon, 5)
 
     return span.innerHTML;
-
-    // Amamteur's approach is messy
-    // var coords_text;
-    // // determine how to link the coordinates to a native app, if on a mobile device
-    // if(ua.indexOf('iphone') > -1) {
-    //     coords_text = '<a href="maps://?q='+lat+','+lon+'">' +
-    //                   roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
-    // } else if(ua.indexOf('android') > -1) {
-    //     coords_text = '<a href="geo:'+lat+','+lon+'?q='+lat+','+lon+'('+name+')">' +
-    //                   roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
-    // } else {
-    //     coords_text = '<a href="https://www.google.com/maps/search/?api=1&query='+lat+','+lon+'" target="_blank" rel="noopener noreferrer">' +
-    //         roundNumber(lat, 5) + ', ' + roundNumber(lon, 5) +'</a>';
-    // }
-
-    // return coords_text;
 };
 
 // runs every second
