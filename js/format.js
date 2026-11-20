@@ -296,143 +296,123 @@ function formatData(data, live) { // Amateur didn't have live
         } else { // AWS
             for (var i = data.length - 1; i >= 0; i--) {
                 data[i].serial = encodeURIComponent(data[i].serial); // hack for xss prevention
-                if (data[i].hasOwnProperty('subtype') && data[i].subtype == "SondehubV1") { // SondeHub V1
-                    var dataTempEntry = {};
-                    var station = data[i].uploader_callsign;
-                    dataTempEntry.callsign = {};
-                    dataTempEntry.callsign[station] = {};
-                    dataTempEntry.gps_alt = parseFloat(data[i].alt);
-                    dataTempEntry.gps_lat = parseFloat(data[i].lat);
-                    dataTempEntry.gps_lon = parseFloat(data[i].lon);
-                    dataTempEntry.gps_time = data[i].time_received;
-                    dataTempEntry.server_time = data[i].time_received;
-                    dataTempEntry.vehicle = data[i].serial;
-                    dataTempEntry.position_id = data[i].serial + "-" + data[i].time_received;
-                    dataTempEntry.data = {};
-                    if (data[i].humidity) {
-                        dataTempEntry.data.humidity = parseFloat(data[i].humidity);
-                    }
-                    if (data[i].temp) {
-                        dataTempEntry.data.temperature_external = parseFloat(data[i].temp);
-                    }
-                    dataTemp.push(dataTempEntry);
-                } else { // SondeHub V2
-                    var dataTempEntry = {};
-                    var station = data[i].uploader_callsign;
-                    dataTempEntry.callsign = {};
-                    dataTempEntry.callsign[station] = {};
-                    if (data[i].snr) {
-                        dataTempEntry.callsign[station].snr = data[i].snr;
-                    }
-                    if (data[i].rssi) {
-                        dataTempEntry.callsign[station].rssi = data[i].rssi;
-                    }
-                    if (data[i].frequency) {
-                        dataTempEntry.callsign[station].frequency = data[i].frequency;
-                    }
-                    dataTempEntry.gps_alt = data[i].alt;
-                    dataTempEntry.gps_lat = data[i].lat;
-                    dataTempEntry.gps_lon = data[i].lon;
 
-                    // Discard positions with null values.
-                    if (dataTempEntry.gps_lat == 0 && dataTempEntry.gps_lon == 0) {
+                var dataTempEntry = {};
+                var station = data[i].uploader_callsign;
+                dataTempEntry.callsign = {};
+                dataTempEntry.callsign[station] = {};
+                if (data[i].snr) {
+                    dataTempEntry.callsign[station].snr = data[i].snr;
+                }
+                if (data[i].rssi) {
+                    dataTempEntry.callsign[station].rssi = data[i].rssi;
+                }
+                if (data[i].frequency) {
+                    dataTempEntry.callsign[station].frequency = data[i].frequency;
+                }
+                dataTempEntry.gps_alt = data[i].alt;
+                dataTempEntry.gps_lat = data[i].lat;
+                dataTempEntry.gps_lon = data[i].lon;
+
+                // Discard positions with null values.
+                if (dataTempEntry.gps_lat == 0 && dataTempEntry.gps_lon == 0) {
+                    continue;
+                }
+
+                if (data[i].heading) {
+                    dataTempEntry.gps_heading = data[i].heading;
+                }
+                dataTempEntry.gps_time = data[i].datetime;
+                dataTempEntry.server_time = data[i].datetime;
+                dataTempEntry.vehicle = data[i].serial;
+                dataTempEntry.position_id = data[i].serial + "-" + data[i].datetime;
+                dataTempEntry.data = {};
+                if (data[i].batt) {
+                    dataTempEntry.data.batt = data[i].batt;
+                }
+                if (data[i].burst_timer) {
+                    dataTempEntry.data.burst_timer = data[i].burst_timer;
+                }
+                if (data[i].frequency) {
+                    dataTempEntry.data.frequency = data[i].frequency;
+                }
+                if (data[i].tx_frequency) {
+                    dataTempEntry.data.frequency_tx = data[i].tx_frequency;
+                }
+                if (data[i].hasOwnProperty("humidity")) {
+                    dataTempEntry.data.humidity = data[i].humidity;
+                }
+                if (data[i].manufacturer) {
+                    dataTempEntry.data.manufacturer = data[i].manufacturer;
+                }
+                if (data[i].hasOwnProperty("pressure")) {
+                    dataTempEntry.data.pressure = data[i].pressure;
+                }
+                if (data[i].sats) {
+                    dataTempEntry.data.sats = data[i].sats;
+                    
+                    // Drop frames where sats = 0! We do not want to be handling invalid positions.
+                    if (dataTempEntry.data.sats == 0){
                         continue;
                     }
-
-                    if (data[i].heading) {
-                        dataTempEntry.gps_heading = data[i].heading;
-                    }
-                    dataTempEntry.gps_time = data[i].datetime;
-                    dataTempEntry.server_time = data[i].datetime;
-                    dataTempEntry.vehicle = data[i].serial;
-                    dataTempEntry.position_id = data[i].serial + "-" + data[i].datetime;
-                    dataTempEntry.data = {};
-                    if (data[i].batt) {
-                        dataTempEntry.data.batt = data[i].batt;
-                    }
-                    if (data[i].burst_timer) {
-                        dataTempEntry.data.burst_timer = data[i].burst_timer;
-                    }
-                    if (data[i].frequency) {
-                        dataTempEntry.data.frequency = data[i].frequency;
-                    }
-                    if (data[i].tx_frequency) {
-                        dataTempEntry.data.frequency_tx = data[i].tx_frequency;
-                    }
-                    if (data[i].hasOwnProperty("humidity")) {
-                        dataTempEntry.data.humidity = data[i].humidity;
-                    }
-                    if (data[i].manufacturer) {
-                        dataTempEntry.data.manufacturer = data[i].manufacturer;
-                    }
-                    if (data[i].hasOwnProperty("pressure")) {
-                        dataTempEntry.data.pressure = data[i].pressure;
-                    }
-                    if (data[i].sats) {
-                        dataTempEntry.data.sats = data[i].sats;
-                        
-                        // Drop frames where sats = 0! We do not want to be handling invalid positions.
-                        if (dataTempEntry.data.sats == 0){
-                            continue;
-                        }
-                    }
-                    if (data[i].hasOwnProperty("temp")) {
-                        dataTempEntry.data.temperature_external = data[i].temp;
-                    }
-                    if (data[i].type && data[i].type == "payload_telemetry") { // SondeHub V1.5 data?
-                        var comment = data[i].comment.split(" ");
-                        if (v1types.hasOwnProperty(comment[0])) {
-                            dataTempEntry.data.type = v1types[comment[0]];
-                            dataTempEntry.type = v1types[comment[0]];
-                            if (v1manufacturers.hasOwnProperty(dataTempEntry.type)) {
-                                // dataTempEntry.data.manufacturer = v1manufacturers[dataTempEntry.type];
-                                dataTempEntry.data.type = v1manufacturers[dataTempEntry.type] + " " + dataTempEntry.data.type;
-                            }
-                        }
-                        dataTempEntry.data.frequency = comment[2];
-                    } else if (data[i].type) {
-                        dataTempEntry.data.type = data[i].type;
-                        dataTempEntry.type = data[i].type;
-                    }
-                    if (data[i].subtype) {
-                        dataTempEntry.data.type = data[i].subtype;
-                        dataTempEntry.type = data[i].subtype;
-                    }
-
-                    if (data[i].manufacturer) {
-                        // Instead of adding a separate manufacturer field, prefix the type with it.
-                        if (dataTempEntry.data.type) {
-                            dataTempEntry.data.type = data[i].manufacturer + " " + dataTempEntry.data.type;
-                        }
-                    }
-
-                    // RS41 specific stuff
-                    if (data[i].hasOwnProperty("rs41_mainboard")) {
-                        dataTempEntry.data.rs41_mainboard = data[i].rs41_mainboard;
-                    }
-                    // Removed showing mainboard firmware, not really valuable
-
-                    // XDATA Handling
-                    if (data[i].xdata) {
-                        dataTempEntry.data.xdata = data[i].xdata;
-                        if (data[i].hasOwnProperty("pressure")) {
-                            xdata_pressure = data[i].pressure;
-                        } else {
-                            xdata_pressure = 1100.0;
-                        }
-                        var tempXDATA = parseXDATA(data[i].xdata, xdata_pressure);
-                        for (let field in tempXDATA) {
-                            if (tempXDATA.hasOwnProperty(field)) {
-                                if (field == "xdata_instrument") {
-                                    dataTempEntry.data.xdata_instrument = tempXDATA.xdata_instrument.join(', ');
-                                } else {
-                                    dataTempEntry.data[field] = tempXDATA[field];
-                                }
-                            }
-                        }
-                    }
-                    dataTemp.push(dataTempEntry);
                 }
+                if (data[i].hasOwnProperty("temp")) {
+                    dataTempEntry.data.temperature_external = data[i].temp;
+                }
+                if (data[i].type && data[i].type == "payload_telemetry") { // SondeHub V1.5 data?
+                    var comment = data[i].comment.split(" ");
+                    if (v1types.hasOwnProperty(comment[0])) {
+                        dataTempEntry.data.type = v1types[comment[0]];
+                        dataTempEntry.type = v1types[comment[0]];
+                        if (v1manufacturers.hasOwnProperty(dataTempEntry.type)) {
+                            // dataTempEntry.data.manufacturer = v1manufacturers[dataTempEntry.type];
+                            dataTempEntry.data.type = v1manufacturers[dataTempEntry.type] + " " + dataTempEntry.data.type;
+                        }
+                    }
+                    dataTempEntry.data.frequency = comment[2];
+                } else if (data[i].type) {
+                    dataTempEntry.data.type = data[i].type;
+                    dataTempEntry.type = data[i].type;
+                }
+                if (data[i].subtype) {
+                    dataTempEntry.data.type = data[i].subtype;
+                    dataTempEntry.type = data[i].subtype;
+                }
+
+                if (data[i].manufacturer) {
+                    // Instead of adding a separate manufacturer field, prefix the type with it.
+                    if (dataTempEntry.data.type) {
+                        dataTempEntry.data.type = data[i].manufacturer + " " + dataTempEntry.data.type;
+                    }
+                }
+
+                // RS41 specific stuff
+                if (data[i].hasOwnProperty("rs41_mainboard")) {
+                    dataTempEntry.data.rs41_mainboard = data[i].rs41_mainboard;
+                }
+                // Removed showing mainboard firmware, not really valuable
+
+                // XDATA Handling
+                if (data[i].xdata) {
+                    dataTempEntry.data.xdata = data[i].xdata;
+                    if (data[i].hasOwnProperty("pressure")) {
+                        xdata_pressure = data[i].pressure;
+                    } else {
+                        xdata_pressure = 1100.0;
+                    }
+                    var tempXDATA = parseXDATA(data[i].xdata, xdata_pressure);
+                    for (let field in tempXDATA) {
+                        if (tempXDATA.hasOwnProperty(field)) {
+                            if (field == "xdata_instrument") {
+                                dataTempEntry.data.xdata_instrument = tempXDATA.xdata_instrument.join(', ');
+                            } else {
+                                dataTempEntry.data[field] = tempXDATA[field];
+                            }
+                        }
+                    }
+                }
+                dataTemp.push(dataTempEntry);
+                
             }
         }
     }
