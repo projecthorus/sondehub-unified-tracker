@@ -708,16 +708,15 @@ $(window).ready(function() {
                 default: pretty_name = name[0].toUpperCase() + name.slice(1);
             }
         }
-        if (isProfessional()) { // Professional Only
-            var visible_box = $(".flatpage:visible");
-            if (visible_box.length > 0){
-                wvar.box = visible_box[0].id
-            } else {
-                wvar.box = null
-            }
-
-            lhash_update(true);
+        var visible_box = $(".flatpage:visible");
+        if (visible_box.length > 0){
+            wvar.box = visible_box[0].id
+        } else {
+            wvar.box = null
         }
+
+        lhash_update(true);
+    
         checkSize();
     });
 
@@ -731,10 +730,6 @@ $(window).ready(function() {
             field.removeAttr('disabled');
             e.removeClass('on').addClass('off');
 
-            // Amateur only
-            if(navigator.geolocation) {
-                navigator.geolocation.clearWatch(CHASE_enabled);
-            }
             CHASE_enabled = null;
             //CHASE_enabled = false;
 
@@ -762,14 +757,7 @@ $(window).ready(function() {
                 ChaseCar.updatePosition(callsign, { coords: { latitude: GPS_lat, longitude: GPS_lon, altitude: GPS_alt, speed: GPS_speed }});
             }
 
-            if (isProfessional()){
-                CHASE_enabled = true; // Professional Only
-            }
-            // Amateur Only 
-            else if(navigator.geolocation) {
-                CHASE_enabled = navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
-            }
-            
+            CHASE_enabled = true;
 
             // hide the blue man
             if(currentPosition && currentPosition.marker) map.removeLayer(currentPosition.marker);
@@ -1035,7 +1023,7 @@ $(window).ready(function() {
 
         navigator.geolocation.getCurrentPosition(positionUpdateHandle);
 
-        if(isProfessional() && navigator.geolocation){ // Professional only
+        if(navigator.geolocation){
             navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
         }
     }
