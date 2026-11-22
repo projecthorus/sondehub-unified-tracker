@@ -28,7 +28,7 @@ TYPE=$1
 # Amateur didn't have the creeate versioning previously
 # create version check file
 echo -n "Generating js/version.json... "
-echo "{\"build_date\": \"$BUILD_DATE\", \"version\": \"$VERSION\", \"refresh\": 86400, \"type\": \"$TYPE\"}" > js/version.json
+echo "{\"type\": \"$TYPE\", \"type_name\": \"$TYPE_NAME\", \"build_date\": \"$BUILD_DATE\", \"version\": \"$VERSION\", \"refresh\": 86400}" > js/version.json
 echo "Done!"
 
 # Type Configuration

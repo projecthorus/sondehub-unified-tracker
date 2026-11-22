@@ -1,7 +1,7 @@
 {
   "name": "{TYPE_NAME}",
   "short_name": "SondeHub",
-  "description": "A webapp for tracking amateur high altitude balloon flights.",
+  "description": "A webapp for tracking radiosondes.",
   "theme_color": "#00a3d3",
   "background_color": "#00a3d3",
   "display": "standalone",

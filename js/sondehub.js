@@ -4755,7 +4755,7 @@ function liveData() {
 
                     var pred_data = [
                         {
-                            "vehicle": isProfessional? frame.serial : frame.payload_callsign,
+                            "vehicle": isProfessional()? frame.serial : frame.payload_callsign,
                             "time": frame.datetime,
                             "latitude": frame.position[1],
                             "longitude": frame.position[0],
