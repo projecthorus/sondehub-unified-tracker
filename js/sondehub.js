@@ -1224,7 +1224,9 @@ function load() {
         });
         // Only in Amateur
         // if there is enough screen space open aboutbox on startup
-        if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) $('.nav li.about').click();
+        if (!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) {
+            $('.nav li[function=about]').click();
+        }
 
     }, 500);
 }
@@ -1810,7 +1812,7 @@ function recoveryPopup(){
 function show_recoveries(){
     // Open the recovery reporting tab
     if ($("#recoveriesbox").is(':visible') == false){
-        $('.nav .recoveries').click();
+        $('.nav [function=recoveries]').click();
     }
 
     // Hide the recovery notice

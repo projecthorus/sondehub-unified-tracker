@@ -741,7 +741,7 @@ header .search form input[type='submit'] {
     display: none;
 }
 
-.nav .home {
+.nav [function=home] {
     display: none;
 }
 
@@ -973,7 +973,7 @@ header .search form input[type='submit'] {
     padding: 10px;
 }
 /* predictor settings pane */ 
-.prediction_settings { 
+.ic-balloon { 
     background-image: url("../glyphs/icon-balloon.svg");
     background-repeat: no-repeat;
     background-size: 50%;

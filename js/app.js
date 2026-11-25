@@ -279,7 +279,7 @@ function trackerInit() {
 
     // if we there is enough screen space open aboutbox on startup
     if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) {
-        $('.nav li.about').click(); 
+        $('.nav li[function=about]').click(); 
     }
 
     if(is_mobile || wvar.enabled) $(".nav .wvar").hide();
@@ -686,10 +686,12 @@ $(window).ready(function() {
     $('.nav')
     .on('click', 'li', function() {
         var e = $(this);
-        var name = e.attr('class').replace(" last","");
+        var name = e.attr('function');
 
         // makes the menu buttons act like a switch
-        if($("#"+name+"box").is(':visible')) name = 'home';
+        if ($("#"+name+"box").is(':visible')){
+            name = 'home';
+        }
 
         var box = $("#"+name+"box");
 
@@ -1014,15 +1016,15 @@ $(window).ready(function() {
     if(navigator.geolocation) {
         // if we have geolocation services, show the locate me button
         // the button pans the map to the user current location
-        //if(is_mobile && !wvar.enabled) $(".chasecar").show();
+        //if(is_mobile && !wvar.enabled) $("[function=chasecar]").show();
         // Enable the chase-car option for all browsers, not just mobile ones.
-        $(".chasecar").show();
+        $("[function=chasecar]").show();
         $("#locate-me,#app_name").attr('style','').click(function() {
             if(currentPosition) {
                 // disable following of vehicles
                 stopFollow();
                 // open map
-                $('.nav .home').click();
+                $('.nav [function=home]').click();
                 // pan map to our current location
                 map.panTo(new L.LatLng(currentPosition.lat, currentPosition.lon));
             } else {
