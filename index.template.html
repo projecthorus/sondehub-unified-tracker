@@ -99,69 +99,6 @@
             <span id="banner"></span>
         </div>
     </header>
-    <div id="recoveriesbox" style="display: none" class="flatpage professional-element">
-        <div class="slimContainer">
-            <h3><i class="icon-habhub rfloat"></i>Report Recovery</h3>
-            <hr/>
-            <div class="row">            
-            <span><b>Please report recovered radiosondes! Don't waste others time and effort with a frustrating failed recovery!</b></span>
-            <span>Enter the serial number, select recovered / planned, and add some notes.</span>
-            <span>If the sonde is not on the map, type its serial into the top-left search box and press enter to retrieve historical data.</span>
-            <span>You can also try our new <a href="https://sondehub.org/found" target="_blank" rel="noopener">recovery reporting page!</a></span>
-            </div>
-            <div class="row">
-                <span><b>Serial</b> <a href="https://github.com/projecthorus/sondehub-infra/wiki/Radiosonde-Serial-Numbers" target="_blank" rel="noopener">(Help)</a></span>
-                <span class="r"><input type="text" id="pr_serial" style="width: 140px;"/></span>
-            </div>
-            <div class="row">
-                <span><b>Recovered By</b></span>
-                <span class="r"><input type="text" id="recovery_callsign" style="width: 140px;" maxlength="15"/></span>
-            </div>
-            <div class="row option">
-                <span><b>Recovery Success</b></span>
-                <div class="switchyn on" id="sw_recovery_ok">
-                    <span class="thumb"></span>
-                    <input type="checkbox" id="recovery_ok">
-                </div>
-            </div>
-            <div class="row option">
-                <span><b>Recovery Planned</b> <a href="https://github.com/projecthorus/sondehub-tracker/wiki/SondeHub-Tracker-User-Guide#recoveries-tab" target="_blank" rel="noopener">(NOTE)</a></span>
-                <div class="switchyn off" id="sw_recovery_planned">
-                    <span class="thumb"></span>
-                    <input type="checkbox" id="recovery_planned">
-                </div>
-            </div>
-            <div class="row option">
-                <span><b>Use Browser Position</b></span>
-                <div class="switch off" id="sw_use_car_pos">
-                    <span class="thumb"></span>
-                    <input type="checkbox" id="use_car_pos">
-                </div>
-            </div>
-            <div class="row">
-                <span><b>Notes</b></span>
-            </div>
-            <div class="row">
-                <span>
-                    <textarea name="pr_notes" id="pr_notes" style="width:280px;height:60px;"></textarea>
-                </span>
-            </div>
-            <div class="row">
-                <span><b>Report Result</b></span>
-                <span class="r" id="pr_last_report">none</span>
-            </div>
-            <div class="row">
-                <span class="r"><input type="button" value="Submit" id="pr_submit" onclick="ChaseCar.markRecovered();"/></span>
-            </div>
-            <hr/>
-            <h3>Statistics</h3>
-            <hr/>
-            <div id="leaderboard-list"><img style="width:90px;height:30px;display:block;margin:auto;" src="img/hab-spinner.gif"/><br></div>
-            <hr/>
-            <h3>Recoveries</h3>
-            <div id="recovery-list"><img style="width:90px;height:30px;display:block;margin:auto;" src="img/hab-spinner.gif"/><br></div>
-        </div>
-    </div>
     <div id="embedbox" style="display: none" class="flatpage amateur-element">
         <div class="slimContainer">
             <h2>Embed tracker
@@ -513,9 +450,6 @@
         <div class="professional-element" style="width: 100%;">
             <div id="zoom_warning" class="lfloat slickbox" style="width:250px; bottom: 0px;   left: 50%; transform: translate(-50%, -50%);">
                 <div style="width:250px">Zoom in for realtime data!</div>
-            </div>
-            <div id="recovery_notice" class="lfloat slickbox" onclick="show_recoveries();" style="width:225px; bottom: 0px; left: 50%; transform: translate(-50%, -50%); display:none;">
-                <div style="width:225px"><b>Please report recovered sondes!</b></div>
             </div>
         </div>
         <div id="timebox" class="present slickbox animate" style="display: none">

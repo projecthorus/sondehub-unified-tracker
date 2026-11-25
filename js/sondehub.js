@@ -1135,9 +1135,6 @@ function load() {
             }
         }
         updateZoom();
-        if (isProfessional()) {
-            recoveryPopup(); // Professional Only
-        }
     });
 
     map.on('movestart', function() {
@@ -1756,75 +1753,6 @@ function drawLOSPaths(vcallsign) {
         });
     });
 }
-
-var recovery_popup = true;
-// Recoveries Only used in Professional
-function recoveryPopup(){
-        // Conditions for showing this are:
-        // Zoom level >= 13
-        // A sonde is in the map view area. (Use the subscribed sondes for this)
-        // If a user position is available, that position is within 500km of the sonde.
-        recovery_popup_limit = 500000;
-
-        if( (map.getZoom() >= 13) && (clientTopic.length >= 2)){
-            if(recovery_popup == true){
-                // Logic to not show a popup if the centre of the map is > 500km from the viewer location,
-                _viewer_lat = parseFloat($('#cc_lat').text())
-                _viewer_lon = parseFloat($('#cc_lon').text())
-
-                if ( (_viewer_lat != 0.0) && (_viewer_lon != 0.0) ){
-
-                    _map_centre = {
-                        'lat':map.getCenter().lat,
-                        'lon':map.getCenter().lng,
-                        'alt':0.0
-                    };
-                    _viewer = {
-                        'lat': _viewer_lat,
-                        'lon': _viewer_lon,
-                        'alt': 0.0
-                    };
-            
-                    // Calculate the distance from the sonde
-                    _lookangles = calculate_lookangles(_viewer, _map_centre);
-
-                    if(_lookangles.range > recovery_popup_limit){
-                        return;
-                    }
-                }
-
-                // If we're here, then we either don't have a valid viewer location,
-                // Or the viewer is within 500km. Show the popup.
-                var recoveryNotice = document.getElementById("recovery_notice");
-                if (recoveryNotice) {
-                    recoveryNotice.style.display = "block";
-                }                
-                return;
-            }
-        }
-        var recoveryNotice = document.getElementById("recovery_notice");
-        if (recoveryNotice) {
-            recoveryNotice.style.display = "none";
-        }    
-    }
-
-// Recoveries Only used in Professional
-function show_recoveries(){
-    // Open the recovery reporting tab
-    if ($("#recoveriesbox").is(':visible') == false){
-        $('.nav [function=recoveries]').click();
-    }
-
-    // Hide the recovery notice
-    var recoveryNotice = document.getElementById("recovery_notice");
-    if (recoveryNotice) {
-        recoveryNotice.style.display = "none";
-    }
-
-    // Don't show the recovery notice again.
-    recovery_popup = false;
-}
-
 
 function focusVehicle(vcallsign, ignoreOpt) {
     var dont_focus = !offline.get('opt_hilight_vehicle') && ignoreOpt === undefined;
@@ -5030,7 +4958,6 @@ function singleRecovery(serial) { // Only in Professional
 }
 
 function refreshRecoveries() { // Only in Professional
-
     $.ajax({
         type: "GET",
         url: recovered_sondes_url,
@@ -5038,7 +4965,6 @@ function refreshRecoveries() { // Only in Professional
         success: function(response, textStatus) {
           var checkLoadedTimer = setInterval(() => {
             if (map){
-              updateRecoveryPane(response);
               if(!offline.get('opt_hide_recoveries')) {
                   updateRecoveries(response);
               }
@@ -5047,25 +4973,8 @@ function refreshRecoveries() { // Only in Professional
           }, 50);
         },
         error: function() {
-            updateRecoveryPane([]);
         }
     });
-
-}
-
-function refreshRecoveryStats() { // Only in Professional
-    $.ajax({
-        type: "GET",
-        url: recovered_sondes_stats_url,
-        dataType: "json",
-        success: function(response, textStatus) {
-            updateLeaderboardPane(response);
-        },
-        error: function() {
-            updateLeaderboardPane([]);
-        }
-    });
-
 }
 
 var ajax_predictions = null;
@@ -5104,7 +5013,6 @@ function startAjax() {
     refreshPatreons();
     if (isProfessional()){
         refreshRecoveries(); // Only in Professional
-        refreshRecoveryStats(); // Only in Professional
     }
 }
 
@@ -5470,9 +5378,6 @@ function updateRecoveryMarker(recovery) { // Only in Professional
 function updateRecoveries(r, single=false) { // Only in Professional
       if(!r) return;
       ls_recoveries = true;
-
-      var dateNow = Date.now();
-        
   
       var i = 0, ii = r.length;
       for(; i < ii; i++) {
@@ -5523,102 +5428,6 @@ function updateRecoveries(r, single=false) { // Only in Professional
               recovery_names.splice(i,1);
           }
       }
-  
-  }
-
-function updateRecoveryPane(r){ // Only in Professional
-    if(!r) return;
-    ls_recoveries = true;
-
-    html = "";
-
-    var dateNow = Date.now();
-
-    var i = 0, ii = r.length;
-    for(; i < ii; i++) {
-        var date = Date.parse(r[i].datetime);
-        if (((dateNow - date) / 86400000) < 3) {
-            var lat = parseFloat(r[i].lat);
-            var lon = parseFloat(r[i].lon);
-            var alt = parseFloat(r[i].alt);
-
-            if(lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
-
-            var r_index = $.inArray(r[i].serial, recovery_names);
-
-            if(r_index == -1) {
-                recovery_names.push(r[i].serial);
-                r_index = recovery_names.length - 1;
-                recoveries[r_index] = {marker: null, infobox: null};
-            }
-
-            _recovered_text = r[i].recovered ? " Recovered by " : " Not Recovered by ";
-
-            // Override text is planned field exists and is true
-            if(r[i].hasOwnProperty('planned')){
-              if(r[i].planned == true){
-                  _recovered_text = " Recovery Planned by ";
-              }
-            }
-
-            html += "<div style='line-height:16px;position:relative;'>";
-            html += "<div><b><u>"+$('<span>').text(r[i].serial+(_recovered_text)+r[i].recovered_by).html()+"</u></b></div>";
-            html += "<div style='margin-bottom:5px;'><b><button style='margin-bottom:0px;' onclick='panToRecovery(\"" + r[i].serial + "\")'><i class='icon-location'></i></button>&nbsp;</b>"+format_coordinates(lat, lon, r[i].serial)+"</div>";
-    
-            var imp = offline.get('opt_imperial');
-            var text_alt      = Number((imp) ? Math.floor(3.2808399 * parseInt(alt)) : parseInt(alt)).toLocaleString("us");
-            text_alt     += "&nbsp;" + ((imp) ? 'ft':'m');
-    
-            html += "<div><b>Time:&nbsp;</b>"+formatDate(stringToDateUTC(r[i].datetime))+"</div>";
-            html += "<div><b>Reported by:&nbsp;</b>"+$('<span>').text(r[i].recovered_by).html()+"</div>";
-            html += "<div><b>Notes:&nbsp;</b>"+$('<div>').text(r[i].description).html()+"</div>";
-            html += "<div><b>Flight Path:&nbsp;</b><a href=\"javascript:showRecoveredMap('" + r[i].serial + "')\">"+r[i].serial+"</a></div>";
-            html += "<hr style='margin:5px 0px'>";
-            html += "</div>";
-        }
-    }
-
-    if (html == "") {
-        html = "<div>No recent recoveries :-(</div>"
-    }
-
-    $("#recovery-list").html(html);
-
-}
-
-function updateLeaderboardPane(r){ // Only in Professional
-    if(!r) return;
-
-    html = "";
-    var recovered = r.recovered;
-    var total = r.total;
-    var hunters = r.chaser_count;
-    var top = r.top_chasers;
-
-    // create a sorted list
-    top = Object.keys(top).map(function(key){return [key, top[key]]});
-    top.sort(function(a, b) {
-        return b[1] - a[1];
-    });
-
-    html += "<div><b>Total sondes recovered: " + recovered + "/" + total + "</b></div>";
-    html += "<div><b>Total hunters: " + hunters + "</b></div><br>";
-    html += "<div><b>Leaderboard: </b></div>";
-
-    var i = 1;
-    for (let chaser in top) {
-        if (top.hasOwnProperty(chaser)) {
-            html += "<div><b>" + parseInt(i) + ". </b>" + top[chaser][0] + " - " + top[chaser][1] + "</div>";
-            i+=1;
-         }
-    }
-
-    if (r.length == 0) {
-        html = "<div>Error :-(</div>"
-    }
-
-    $("#leaderboard-list").html(html);
-
 }
 
 function updateLaunchPredictions(r) { // Only in Professional
