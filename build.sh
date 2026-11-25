@@ -46,7 +46,7 @@ echo "Done!"
 
 # cache fixes
 echo -n "Generating sondehubType.js... "
-sed -e "s/{TYPE}/$TYPE/" sondehubType.template.js > js/sondehubType.js
+sed -e "s/{TYPE}/$TYPE/" -e "s/{TYPE_NAME}/$TYPE_NAME/" sondehubType.template.js > js/sondehubType.js
 echo "Done!"
 
 echo -n "Generating service-worker.js... "
