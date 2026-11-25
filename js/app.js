@@ -184,9 +184,12 @@ function load_hash(no_refresh) {
                 break;
             // Amateur Only
             case "mo":
-                // TODO / broken because pro method of loading means that this element isn't ready yet.
-                //document.getElementById("modulationfilter").value = v;
-                sidebar_update();
+                modulationFilterElement = document.getElementById("modulationfilter")
+                // load_hash gets called a number of times, including in "callBack", so I can skip setting the modulation filter element if it's null
+                if (modulationFilterElement !== null) {
+                    document.getElementById("modulationfilter").value = v;
+                    sidebar_update();
+                }
                 break;
         }
     });
