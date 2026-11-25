@@ -7,7 +7,7 @@ var receivers_url = "https://api.v2.sondehub.org/listeners/telemetry";
 var predictions_url = "https://api.v2.sondehub.org/predictions?vehicles=";
 var launch_predictions_url = "https://api.v2.sondehub.org/predictions/reverse"; // Professional Only 
 var recovered_sondes_url = "https://api.v2.sondehub.org/recovered"; // Professional Only
-var recovered_sondes_stats_url = "https://api.v2.sondehub.org/recovered/stats"; // Professional Only
+var recovery_url = "https://sondehub.org/found/?serial="
 var skewt_url = "https://sondehub.org/skewt/?serial="; // Professional Only
 
 // Grafana dashboard for Radiosondes
@@ -1327,24 +1327,6 @@ function panTo(vcallsign) {
     }
 }
 
-// Sondehub Professional Recovery
-function panToRecovery(rcallsign) {
-    if(offline.get('opt_hide_recoveries')) alert("Recovered Sonde Hidden, enable in settings");
-    //if mobile close panel
-    if (is_mobile) {
-        $('.flatpage, #homebox').hide();
-        lhash_update(true);
-    }
-    for (let i = 0; i < recoveries.length; i++) {
-        if (recoveries[i].hasOwnProperty('serial')) {
-            if (recoveries[i]['serial'] == rcallsign) {
-                //pan map
-                map.setView(recoveries[i]['marker'].getLatLng(), 10);
-            }
-        }
-    }
-}
-
 // modulation Filter Amateur
 function isVehicleFiltered(serial){
     if ( document.getElementById("modulationfilter") && document.getElementById("modulationfilter").value && document.getElementById("modulationfilter").value != "all"){
@@ -2285,6 +2267,8 @@ function updateVehicleInfo(vcallsign, newPosition) {
   // I assume Grafana maps uri parameters based on name. If not, here is the problem!!
   var grafana_dashboard_url = grafana_base_url + "var-Payload=" + vcallsign + "&var-Serial=" + vcallsign + "&from=" + vehicle.positions_ts[0] + "&to=" + grafana_to_time + "&orgId=1" + grafana_refresh;
 
+  var recovery_url = "https://sondehub.org/found/?serial="
+
   // Decide if we should enable the 'Float' button.
   // Enable this based on either a very low ascent rate, or if the payload is using WSPR (in which case it's likely a picoballoon)
   var float_button_enabled = (newPosition.gps_alt > 3000 && vehicle.ascent_rate < 1 && vehicle.ascent_rate > -1);
@@ -2315,7 +2299,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">Share</span>' : '') + 
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') + 
             ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:'+(vehicle.image_src_size[1]+145)+'px">Float</span>' : '') +
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'/found/?serial='  + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+145)+'px">Found</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+145)+'px">Found</span>' : '') +
             '<div class="left">' +
             '<dl>';
   //mobile
@@ -2330,7 +2314,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:85px">Share</span>' : '') +
             ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
             ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:145px">Float</span>' : '') +
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'/found/?serial='  + encodeURIComponent(vcallsign) + '\')" style="top:145px">Found</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')" style="top:145px">Found</span>' : '') +
             '<div class="left">' +
             '<dl>';
   var b    = '</dl>' +
