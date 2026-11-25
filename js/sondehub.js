@@ -455,14 +455,6 @@ var plot_options = {
     ]
 };
 
-// APRS Overlay from professional. Commented that it's not used, and it's not in Amateur, so probably useless?
-// // aprs overlay (not used)
-// var overlayARPS = new L.tileLayer('http://{s}.tiles.tracker.habhub.org/aprs/tile_{z}_{x}_{y}.png', {
-// 	subdomains: 'abc',
-//     maxZoom: 6,
-//     attribution: '&copy; <a href="https://tracker.habhub.org/">HabHub</a>'
-// });
-
 //Global Precipitation Weather
 var RainRadar = new L.tileLayer('https://tilecache.rainviewer.com/v2/radar/' + (Math.floor(new Date().getTime() / 600000) * 600) + '/512/{z}/{x}/{y}/1/1_0.png', {
     opacity: 0.6,
