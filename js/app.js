@@ -93,7 +93,7 @@ var wvar = {
     site: 0,
     indexColouring: isAmateur(),
     nena: false,
-    box: "" // Professional Only
+    box: ""
 };
 
 
@@ -118,7 +118,7 @@ function load_hash(no_refresh) {
         nyan: false,
         indexColouring: isAmateur(),
         nena: false,
-        box: "" // Professional Only
+        box: ""
     };
 
     parms.forEach(function(v) {
@@ -199,8 +199,6 @@ function load_hash(no_refresh) {
         if(wvar[k] != def[k]) refresh = true;
     });
 
-
-
     $.extend(true, wvar, def);
     // Map condition and nested if statements only in professional
     if(map){
@@ -211,7 +209,7 @@ function load_hash(no_refresh) {
             $("#"+def["box"]).show()
         }
         checkSize(); // Professional Only 
-        wvar["box"]= def["box"]; // Professional Only
+        wvar["box"] = def["box"];
     
         // force refresh
         if(!no_refresh) {
@@ -334,12 +332,8 @@ function checkSize() {
     ph = 0;
 
     if(w > 900 && $('.flatpage:visible').length) {
-        $('.flatpage').addClass('topanel');
         ph = $('.flatpage:visible').width()+30;
-    } else {
-        $('.flatpage.topanel').removeClass('topanel');
     }
-
     $("#mapscreen,.flatpage").height(h-hh-5);
 
     sw = (wvar.vlist) ? 260 : 0;
@@ -692,35 +686,13 @@ $(window).ready(function() {
         var name = e.attr('function');
 
         // makes the menu buttons act like a switch
-        if ($("#"+name+"box").is(':visible')){
-            name = 'home';
-        }
-
         var box = $("#"+name+"box");
-
-        if(box.is(':hidden')) {
-            $('.flatpage, #homebox').hide();
+        if (box.is(':visible')){
+            box.hide();
+        }
+        else {
+            $('.flatpage').hide();
             box.show().scrollTop(0);
-
-            // if(name == 'about' && !$('#motd').hasClass('inited')) {
-            //     $('#motd').addClass('inited');
-
-            //     $.getJSON("//spacenear.us/tracker/datanew.php?type=info", function(data) {
-            //         if('html' in data) $('#motd').html(data.html.replace(/\\/g,''));
-            //     });
-
-            //     var iframe = box.find('iframe');
-            //     var src = iframe.attr('data-src');
-            //     iframe.attr('src', src);
-            // }
-
-            // analytics
-            var pretty_name;
-            switch(name) {
-                case "home": pretty_name = "Map"; break;
-                case "chasecar": pretty_name = "Chase Car"; break;
-                default: pretty_name = name[0].toUpperCase() + name.slice(1);
-            }
         }
         var visible_box = $(".flatpage:visible");
         if (visible_box.length > 0){

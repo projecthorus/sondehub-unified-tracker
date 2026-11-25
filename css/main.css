@@ -504,18 +504,6 @@ header .search form input[type='submit'] {
     background: #fff;
 }
 
-.topanel {
-    float: right;
-    position: relative;
-    width: auto;
-    padding: 0;
-    padding-left: 10px;
-    padding-right: 20px;
-    box-shadow: 2px 0px 8px 0px #555;
-    overflow-x: hidden;
-    z-index: 3;
-}
-
 .flatpage p {
     display: block;
     text-align: justify;
@@ -741,10 +729,6 @@ header .search form input[type='submit'] {
     display: none;
 }
 
-.nav [function=home] {
-    display: none;
-}
-
 .leaflet-tooltip.serialtooltip {
     background-color: transparent;
     border: 0px;
@@ -815,6 +799,17 @@ header .search form input[type='submit'] {
 }
 
 @media only screen and (min-width: 900px) {
+    .flatpage {
+        float: right;
+        position: relative;
+        width: auto;
+        padding: 0;
+        padding-left: 10px;
+        padding-right: 20px;
+        box-shadow: 2px 0px 8px 0px #555;
+        overflow-x: hidden;
+        z-index: 3;
+    }
 }
 
 @media only screen and (max-width: 600px) {
