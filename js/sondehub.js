@@ -1849,10 +1849,6 @@ function followVehicle(vcallsign, noPan, force) {
 
         updateGraph(vcallsign, true);
         drawLOSPaths(vcallsign);
-
-        if(!vcallsign.endsWith("_chase")){ // Pro only
-            $("#pr_serial").val(vcallsign);
-        }
 	}
 
     if(should_pan) {

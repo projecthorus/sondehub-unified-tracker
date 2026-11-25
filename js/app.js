@@ -775,70 +775,17 @@ $(window).ready(function() {
         }
     });
 
-// Recovery - Only used in Professional
-    // Functions for the payload recovery feature
-    // Logic to switch the recovery OK button
-    $("#sw_recovery_ok").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-            // Remove any planned recovery check.
-            $("#sw_recovery_planned").removeClass('on').addClass('off');
-        }
-    });
-    // Logic to switch the recovery Planned button
-    $("#sw_recovery_planned").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-            // Set recovery OK to false.
-            $("#sw_recovery_ok").removeClass('on').addClass('off');
-        }
-    });
-    $("#recovery_callsign").on('change keyup', function() {
-        callsign = $(this).val().trim();
-        offline.set('callsign', callsign); // put in localStorage
-        CHASE_listenerSent = false;
-        $('#cc_callsign').val(callsign);
-    });
-
 // Chase Car
-    // Logic to switch the use car position button
-    $("#sw_use_car_pos").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-        }
-    });
-
     // remember callsign as a cookie
     $("#cc_callsign").on('change keyup', function() {
         callsign = $(this).val().trim();
         offline.set('callsign', callsign); // put in localStorage
         CHASE_listenerSent = false;
-        $('#recovery_callsign').val(callsign); // Recovery Only used in Professional
     });
 
     // load value from localStorage
     callsign = offline.get('callsign');
     $('#cc_callsign').val(callsign);
-    $('#recovery_callsign').val(callsign); // Recovery Only used in Professional
 
     // settings page
 
@@ -1160,9 +1107,6 @@ $(window).ready(function() {
        } else {
         wvar.zoom = true;
        }
-
-       // Insert the serial number into the recovery reporting serial number textbox
-       $("#pr_serial").val(text); // Professional
 
        clean_refresh(wvar.mode, true, true);
    });
