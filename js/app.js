@@ -49,10 +49,15 @@ function lhash_update(history_step) {
         hash += "&nyan=1";
     }
 
-    // Professional Only 
+    // If Index Colouring is disabled, and it's Amateur
+    // If Index Colouring is enbaled, and it's Professional
+    if(!wvar.indexColouring === !!isAmateur()) {
+        hash += `&indexColouring=${wvar.indexColouring ? 1: 0}`;
+    }
     if(wvar.nena) {
         hash += "&nena=1";
     }
+
     if(wvar.box) { // We just need something to change so we can trigger the back button correctly
         hash += "&box="+wvar.box;
     }
@@ -86,9 +91,9 @@ var wvar = {
     query: "",
     nyan: false,
     site: 0,
-    // Professional Only
+    indexColouring: isAmateur(),
     nena: false,
-    box: ""
+    box: "" // Professional Only
 };
 
 
@@ -111,9 +116,9 @@ function load_hash(no_refresh) {
         focus: "",
         query: "",
         nyan: false,
-        // Professional Only
+        indexColouring: isAmateur(),
         nena: false,
-        box: ""
+        box: "" // Professional Only
     };
 
     parms.forEach(function(v) {
@@ -168,11 +173,13 @@ function load_hash(no_refresh) {
                 focusID = v;
                 gotoSite(v);
                 break;
-            // Professional Only
-            case "box":
+            case "box": // Professional Only
                 def[k] = v;
                 break;
             case "nena":
+                def[k] = !!parseInt(v);
+                break;
+            case "indexColouring":
                 def[k] = !!parseInt(v);
                 break;
             // Amateur Only
@@ -185,7 +192,7 @@ function load_hash(no_refresh) {
     });
 
     // check if we should force refresh
-    ['mode','query','nyan','nena'].forEach(function(k) {
+    ['mode','query','nyan','nena','indexColouring'].forEach(function(k) {
         if(wvar[k] != def[k]) refresh = true;
     });
 
@@ -247,7 +254,8 @@ for(var idx in params) {
         case "focus": wvar.focus = decodeURIComponent(line[1]); break;
         case "docid": wvar.docid = line[1]; break;
         case "mode": wvar.mode = decodeURIComponent(line[1]); break;
-        case "nena": wvar.nena = true; break; // Professional Only
+        case "nena": wvar.nena = true; break;
+        case "indexColouring": wvar.indexColouring = true; break;
     }
 }
 

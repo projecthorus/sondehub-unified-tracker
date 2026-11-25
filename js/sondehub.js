@@ -62,13 +62,13 @@ var markerStationLookup = {};
 var predictionAjax = [];
 
 //Professional Start
-    var stationHistoricalData = {};
-    var historicalPlots = {};
-    var historicalAjax = [];
+var stationHistoricalData = {};
+var historicalPlots = {};
+var historicalAjax = [];
 
-    var skewtdata = [];
+var skewtdata = [];
 
-    var launches = new L.LayerGroup();
+var launches = new L.LayerGroup();
 // Professional End 
 var focusID = 0;
 
@@ -3604,14 +3604,19 @@ function addPosition(position) {
             for (let i = 0; i < vcallsign.length; i++){ // Professional 
                 colorHash += vcallsign.charCodeAt(i);
             }
-            color_index = colorHash % balloon_colors.length; // Professional
-            // color_index = balloon_index++ % balloon_colors.length; // Amateur
 
-            if(wvar.nena){ // Professional
+            if (wvar.indexColouring) {
+                color_index = balloon_index++ % balloon_colors.length; // Amateur
+            }
+            else if (wvar.nena) {
                 // All the balloon are red.
                 balloon_colors = ["#ff0000"]
                 color_index = 0;
             }
+            else {
+                color_index = colorHash % balloon_colors.length; // Professional
+            }
+
             image_src = recolorSVG(host_url + markers_url + "balloon.svg", balloon_colors[color_index]);
             image_src_size = [46,84];
             image_src_offset = [-35,-46];
