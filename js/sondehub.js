@@ -2344,7 +2344,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
            // habitat_data(vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + // Professional Only
            // habitat_data(newPosition.data) + // Amateur Only
            // newPosition.data seems to always be the same as vehicle.data_fields, except when it's null, and then vehicle.data_fields is an empty object
-           habitat_data(newPosition.data ?? vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + 
+           habitat_data(isProfessional() ? vehicle.data_fields: newPosition.data, vehicle.data_fields_age, newPosition.gps_timestamp) + 
            c + // receivers if any
            '';
 
