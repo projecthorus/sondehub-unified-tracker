@@ -119,46 +119,57 @@ var modeList = {
     "0": {
         "name": "Live only",
         "isActive": true,
+        "isLongMode": false,
     },
     "15s": {
         "name": "15 seconds",
         "isActive": false,
+        "isLongMode": false,
     },
     "1m": {
         "name": "1 minute",
         "isActive": false,
+        "isLongMode": false,
     },
     "30m": {
         "name": "30 minutes",
         "isActive": false,
+        "isLongMode": false,
     },
     "1h": {
         "name": "1 hour",
         "isActive": true,
+        "isLongMode": false,
     },
     "3h": {
         "name": "3 hours",
         "isActive": true,
+        "isLongMode": false,
     },
     "6h": {
         "name": "6 hours",
         "isActive": true,
+        "isLongMode": false,
     },
     "12h": {
         "name": "12 hours",
         "isActive": true,
+        "isLongMode": false,
     }, 
     "1d": {
         "name": "1 day",
         "isActive": isAmateur(),
+        "isLongMode": false,
     }, 
     "3d": {
         "name": "3 days",
         "isActive": isAmateur(),
+        "isLongMode": false,
     },
     "7d": {
         "name": "7 days",
         "isActive": isAmateur(),
+        "isLongMode": false,
     }, 
     "31d": {
         "name": "1 month",
@@ -171,7 +182,7 @@ var modeList = {
         "isLongMode": true,
     },
     "366d": {
-        "name": "1 month",
+        "name": "1 year",
         "isActive": isAmateur(),
         "isLongMode": true,
     }
@@ -612,39 +623,29 @@ var opentopomap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
 });
 opentopomap.id = "OpenTopoMap";
 
-// Sondehub Amateur, commented not used. Probably useless
-//not used
-// var getlost = L.tileLayer('https://live.getlost.com.au/{z}/{x}/{y}.jpg', {
-// 	attribution: '&copy; <a href="https://www.getlost.com.au/current-map-information/">Getlost Maps</a>',
-// 	minZoom: 4,
-// 	maxZoom: 16,
-// });
-// getlost.id = "GetLost";
+var highSight = L.tileLayer('https://api.highsight.dev/v1/tiles/{z}/{x}/{y}?key=ARX3jYxzWotJVz7ZgdDiMQI18tZJ5WCk', {
+    attribution: '&copy; <a href="https://highsight.dev/">HighSight</a>',
+    maxZoom: 9,
+    minZoom: 3,
+    crossOrigin: true
+});
 
-// Sondehub Professional
-    var highSight = L.tileLayer('https://api.highsight.dev/v1/tiles/{z}/{x}/{y}?key=ARX3jYxzWotJVz7ZgdDiMQI18tZJ5WCk', {
-        attribution: '&copy; <a href="https://highsight.dev/">HighSight</a>',
-        maxZoom: 9,
-        minZoom: 3,
-        crossOrigin: true
-    });
+highSight.id = "HighSight";
 
-    highSight.id = "HighSight";
+// OpenFreeMap Vector Layers
+// We may eventually switch to all vector layers
 
-    // OpenFreeMap Vector Layers
-    // We may eventually switch to all vector layers
+// Replacing CartoDB Voyager
+var openfreemap_liberty = L.maplibreGL({
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+});
+openfreemap_liberty.id = "OpenFreeMap-Liberty";
 
-    // Replacing CartoDB Voyager
-    var openfreemap_liberty = L.maplibreGL({
-        style: 'https://tiles.openfreemap.org/styles/liberty',
-    });
-    openfreemap_liberty.id = "OpenFreeMap-Liberty";
-
-    // Replacement for CartoDB DarkMatter
-    var openfreemap_dark = L.maplibreGL({
-        style: 'https://tiles.openfreemap.org/styles/dark',
-    });
-    openfreemap_dark.id = "OpenFreeMap-Dark";
+// Replacement for CartoDB DarkMatter
+var openfreemap_dark = L.maplibreGL({
+    style: 'https://tiles.openfreemap.org/styles/dark',
+});
+openfreemap_dark.id = "OpenFreeMap-Dark";
 // Sondehub Professional End
 
 var baseMaps = {
@@ -918,9 +919,6 @@ function load() {
     L.Control.PeriodControl = L.Control.extend({
         onAdd: function(map) {
             var div = L.DomUtil.create('div');
-    
-            // Default for Pro = 3 h
-            // Default for Amateur = 1 day
 
             var selectbox = document.createElement("select");
             selectbox.id = "timeperiod"
@@ -1300,7 +1298,7 @@ function panTo(vcallsign) {
     // update lookangles
     update_lookangles(vcallsign);
 
-    var maxZoom = isProfessional()? 10 : 8;
+    var maxZoom = 10; // 8 in Amateur, 10 in Professional
     // pan map
     if (map.getZoom() > maxZoom) {
         map.setView(vehicles[vcallsign].marker.getLatLng());
@@ -1686,7 +1684,6 @@ function focusVehicle(vcallsign, ignoreOpt) {
     if (dont_focus) {
         return;
     }
-
 
     for(var i in vehicles) {
         var vehicle = vehicles[i], j;
@@ -2223,7 +2220,6 @@ function updateVehicleInfo(vcallsign, newPosition) {
     }
   }
 
-
   //desktop
   var a = '<div class="header">' +
             '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
@@ -2720,7 +2716,6 @@ function redrawPrediction(vcallsign) {
                     "<b>Ascent Rate:</b> " + (vehicle.prediction.ascent_rate * 3.2808399).toFixed(1) + " ft/s \n" + 
                     "<b>Burst Altitude:</b> " + (vehicle.prediction.burst_altitude * 3.2808399).toFixed(0) + " ft\n" + 
                     "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
-                
             }
             else {
                 vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n" + 
@@ -2867,7 +2862,6 @@ function drawAltitudeProfile(c1, c2, series, alt_max, chase) {
             alt = alt_list[i][1];
             alt_time = last_time - alt_list[i][0];
 
-            // 
             //ctx1.lineTo(1+((i+1)*xt1), ch1 - (alt * yt1));
             //ctx2.lineTo(1+((i+1)*xt2), ch2 - (alt * yt2));
             ctx1.lineTo(cw1-(alt_time*xt1), ch1 - (alt * yt1));
@@ -3050,8 +3044,6 @@ function mapInfoBox_handle_path_old(vehicle, id) { // Only in Professional
                     if (data.hasOwnProperty("uploader_callsign")) {
                         html += "<div><span class='old_path_uploader_callsign'></span></div>";
                     };
-
-                    
 
                     div.innerHTML = html;
 
@@ -3897,10 +3889,8 @@ function addPosition(position) {
         }
         if(1 == 2 && vehicle.num_positions > 0 && dt > 0) { // Amateur code (I'm deliberately disabling it with 1 == 2). I don't think I need to use it, but I'll keep it here if that needs to be fixed
 
-        //
         // This commenteed block is an attempt at having the ascent rate and speed
         // calculations be run over a wider time range than just the last position.
-        //
         //     var search_ts = new_ts - 10000
 
         //     function searchPositions(times) {
@@ -3930,39 +3920,39 @@ function addPosition(position) {
         //         if (!isNaN(rate) && isFinite(rate)) {
         //             vehicle.ascent_rate = 0.2 * rate + 0.8 * vehicle.ascent_rate;
         //         }
-
+        //
         //         //console.log("Search OK - DTT: " + dtt + " Instant Rate: " + rate + " Average Rate: " + vehicle.ascent_rate);
-
+        //
         //         // calculate horizontal rate
         //         horizontal_rate_temp = new_latlng.distanceTo(vehicle.positions[search_index]) / dtt;
         //         if (!isNaN(horizontal_rate_temp) && isFinite(horizontal_rate_temp)) {
         //             vehicle.horizontal_rate = horizontal_rate_temp;
         //         }
+        //     } 
+        //     else {
+        //         This section is the 'original' method of calculating the ascent and horizontal rates.
+        //         It works only on the last and current position.
+        //         The ascent rate is filtered.
 
-        //     } else {
-                // This section is the 'original' method of calculating the ascent and horizontal rates.
-                // It works only on the last and current position.
-                // The ascent rate is filtered.
-
-                // This commented block allows use of payload-supplied ascent rate data.
-                // This might be worth using.
-                //
-                // if(position.data.hasOwnProperty('ascent_rate')){
-                //      var rate = position.data.ascent_rate;
-                //  } else {
-                    var rate = (position.gps_alt - vehicle.curr_position.gps_alt) / dt;
-                //}
+        //         This commented block allows use of payload-supplied ascent rate data.
+        //         This might be worth using.
+        //
+        //         if(position.data.hasOwnProperty('ascent_rate')){
+        //              var rate = position.data.ascent_rate;
+        //          } else {
+            var rate = (position.gps_alt - vehicle.curr_position.gps_alt) / dt;
+        //          }
                 
-                if (!isNaN(rate) && isFinite(rate)) {
-                    vehicle.ascent_rate = 0.2 * rate + 0.8 * vehicle.ascent_rate;
-                }
+            if (!isNaN(rate) && isFinite(rate)) {
+                vehicle.ascent_rate = 0.2 * rate + 0.8 * vehicle.ascent_rate;
+            }
 
-                // calculate horizontal rate
-                horizontal_rate_temp = new_latlng.distanceTo(new L.LatLng(vehicle.curr_position.gps_lat, vehicle.curr_position.gps_lon)) / dt;
-                if (!isNaN(horizontal_rate_temp) && isFinite(horizontal_rate_temp)) {
-                    vehicle.horizontal_rate = horizontal_rate_temp;
-                }
-            //}
+            // calculate horizontal rate
+            horizontal_rate_temp = new_latlng.distanceTo(new L.LatLng(vehicle.curr_position.gps_lat, vehicle.curr_position.gps_lon)) / dt;
+            if (!isNaN(horizontal_rate_temp) && isFinite(horizontal_rate_temp)) {
+                vehicle.horizontal_rate = horizontal_rate_temp;
+            }
+        //}
         }
 
         // add the new position

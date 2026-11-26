@@ -247,8 +247,7 @@ for(var idx in params) {
         case "hidegraph": if(line[1] == "1") wvar.graph = false; break;
         case "expandgraph": if(line[1] == "1") wvar.graph_expanded = true; break;
         case "filter":
-            wvar.query = decodeURIComponent(line[1]).replace(/;/g,","); // Amatueur
-            // wvar.query = decodeURIComponent(line[1]); // Professional
+            wvar.query = decodeURIComponent(line[1]).replace(/;/g,",");
             $("header .search input[type='text']").val(wvar.query);
             break;
         case "nyan": wvar.nyan = true; break;
@@ -256,7 +255,9 @@ for(var idx in params) {
         case "docid": wvar.docid = line[1]; break;
         case "mode": wvar.mode = decodeURIComponent(line[1]); break;
         case "nena": wvar.nena = true; break;
-        case "indexColouring": wvar.indexColouring = true; break;
+        case "indexColouring": 
+            wvar.indexColouring = line[1] == "1";
+            break;
     }
 }
 
@@ -372,15 +373,11 @@ window.onchangeorientation = checkSize;
 
 
 // functions
-
 function positionUpdateError(error) {
     switch(error.code)
     {
         case error.PERMISSION_DENIED:
             $('#sw_chasecar').removeClass('on').addClass('off'); // Professional only
-            // Amateur only
-            // alert("no permission to use your location");
-            // $('#sw_chasecar').click(); // turn off chase car
             break;
         default:
         break;
@@ -879,7 +876,7 @@ $(window).ready(function() {
                     $('#lookanglesbox').css({top:'40px'});
                 }
                 break;
-            case "opt_hide_horizon": // Horizon Lines only used in Amateur
+            case "opt_hide_horizon":
                 if(on) {
                     showHorizonRings();
                 }
@@ -1056,12 +1053,6 @@ $(window).ready(function() {
 
    $("header .search form").on('submit', function(e) {
        e.preventDefault();
-
-    //    // Amateur
-    //    var text = $("header .search input[type='text']").val().replace(/;/g,",");
-    //    // Professional
-    //    var text = $("header .search input[type='text']").val().toUpperCase();
-    //    $("header .search input[type='text']")[0].value = text; // update field in case it wasn't already uppercase
 
     // Combined both
        var text = $("header .search input[type='text']").val().replace(/;/g,",");
