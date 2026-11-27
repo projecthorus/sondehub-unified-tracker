@@ -1,22 +1,42 @@
 var mission_id = 0;
 var position_id = 0;
+
+// Professional
 var newdata_url = "https://api.v2.sondehub.org/sondes/telemetry";
 var receivers_url = "https://api.v2.sondehub.org/listeners/telemetry";
 var predictions_url = "https://api.v2.sondehub.org/predictions?vehicles=";
-var launch_predictions_url = "https://api.v2.sondehub.org/predictions/reverse";
-var recovered_sondes_url = "https://api.v2.sondehub.org/recovered";
-var recovered_sondes_stats_url = "https://api.v2.sondehub.org/recovered/stats";
+var launch_predictions_url = "https://api.v2.sondehub.org/predictions/reverse"; // Professional Only 
+var recovered_sondes_url = "https://api.v2.sondehub.org/recovered"; // Professional Only
+var recovery_url = "https://sondehub.org/found/?serial="
+var skewt_url = "https://sondehub.org/skewt/?serial="; // Professional Only
 
 // Grafana dashboard for Radiosondes
 var grafana_url = "https://grafana.v2.sondehub.org/d/bbaa7894-e5f4-4c0d-be96-897b4ffde43b/radiosonde-telemetry-dashboard?";
+
+if (isAmateur()) {
+    var newdata_url = "https://api.v2.sondehub.org/amateur/telemetry";
+    var receivers_url = "https://api.v2.sondehub.org/amateur/listeners/telemetry";
+    var predictions_url = "https://api.v2.sondehub.org/amateur/predictions?vehicles=";
+    // Grafana dashboard for most payloads
+    var grafana_url = "https://grafana.v2.sondehub.org/d/HJgOZLq7k/basic?";
+}
+
+// Amateur Only
+    // Grafana dashboard for slower update-rate payloads (APRS)
+    var grafana_aprs_url = "https://grafana.v2.sondehub.org/d/Lwvk1Hy4k/aprs-telemetry?";
+    // Grafana dashboard for WSPR flight
+    var grafana_wspr_url = "https://grafana.v2.sondehub.org/d/e4571f1f-b51e-4e02-b97a-dcd198b49560/wspr-balloon-telemetry?";
+    // Grafana dashboard for Wenet payloads
+    var grafana_wenet_url = "https://grafana.v2.sondehub.org/d/ddzty5w2yqt4wc/wenet?"
+// Amateur Only End 
 
 var livedata = "wss://ws-reader.v2.sondehub.org/";
 var clientID = "SondeHub-Tracker-" + Math.floor(Math.random() * 10000000000);
 var client = new Paho.Client(livedata, clientID);
 var clientConnected = false;
 var clientActive = false;
-var clientTopic = [];
-var alwaysSub = [];
+var clientTopic = []; //single variable in amateur
+var alwaysSub = []; // Professional Only
 var messageRate = 0;
 var messageRateAverage = 10;
 
@@ -33,14 +53,15 @@ var elm_uuid = 0;
 
 var receiver_names = [];
 var receivers = [];
-var recovery_names = [];
-var recoveries = [];
+var recovery_names = []; // Professional
+var recoveries = [];  // Professional
 
-var launchPredictions = {};
+var launchPredictions = {}; // Professional
 var stationMarkerLookup = {};
 var markerStationLookup = {};
 var predictionAjax = [];
 
+//Professional Start
 var stationHistoricalData = {};
 var historicalPlots = {};
 var historicalAjax = [];
@@ -48,10 +69,12 @@ var historicalAjax = [];
 var skewtdata = [];
 
 var launches = new L.LayerGroup();
+// Professional End 
 var focusID = 0;
 
 var receiverCanvas = null;
 
+// Professional
 var sondePrefix = ["RS92", "RS92-SGP", "RS92-NGP", "RS41", "RS41-SG", "RS41-SGP", "RS41-SGM", "DFM", "DFM06", "DFM09", "DFM17", "M10", "M20", "PS20", "iMet-1", "iMet-4", "iMet-54", "LMS6", "LMS6-400", "LMS6-1680", "iMS-100", "MRZ", "MTS01", "WxR-301D", "chase"];
 var sondeCodes = {
     "07":"iMet-1", "11":"LMS6-403", "13":"RS92", "14":"RS92", "17":"DFM-09", "18":"DFM-06", "19":"MRZ-N1", "22":"RS-11G", "23":"RS41", "24":"RS41", "34":"iMet-4", "35":"iMS-100", "38":"WxR-301D", "41":"RS41", "42":"RS41", "45":"CF-06", "50": "SRS-C50",  "52":"RS92-NGP", 
@@ -74,6 +97,7 @@ var manual_pan = false;
 
 var car_index = 0;
 var car_colors = ["#a6cee3", "#1f78b4", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6"];
+var balloon_index = 0; // Amateur 
 var balloon_colors = ["#d95f02", "#7570b3", "#e7298a", "#e6ab02", "#a6761d", "#666666", "blue", "magenta", "#ffb300", "rebeccapurple"];
 
 var nyan_color_index = 0;
@@ -83,26 +107,106 @@ var rainbow = ["#ff0000", "#fc9a00", "#f6ff00", "#38ff01", "#009aff","#0000ff"];
 var map = null;
 var overlay = null;
 var layer_clouds = null;
+var nite = null; // Amateur
+var niteupdate = null; // Amateur
 
 var notamOverlay = null;
 
 var svgRenderer = L.svg();
 
-var modeList = [
-//    "Position",
-    "0",
-    "15s",
-    "1m",
-    "30m",
-    "1h",
-    "3h",
-    "6h",
-    "12h",
-    "1d",
-    "3d"
-];
+var modeList = {
+    // "Position",
+    "0": {
+        "name": "Live only",
+        "isActive": true,
+        "isLongMode": false,
+    },
+    "15s": {
+        "name": "15 seconds",
+        "isActive": false,
+        "isLongMode": false,
+    },
+    "1m": {
+        "name": "1 minute",
+        "isActive": false,
+        "isLongMode": false,
+    },
+    "30m": {
+        "name": "30 minutes",
+        "isActive": false,
+        "isLongMode": false,
+    },
+    "1h": {
+        "name": "1 hour",
+        "isActive": true,
+        "isLongMode": false,
+    },
+    "3h": {
+        "name": "3 hours",
+        "isActive": true,
+        "isLongMode": false,
+    },
+    "6h": {
+        "name": "6 hours",
+        "isActive": true,
+        "isLongMode": false,
+    },
+    "12h": {
+        "name": "12 hours",
+        "isActive": true,
+        "isLongMode": false,
+    }, 
+    "1d": {
+        "name": "1 day",
+        "isActive": isAmateur(),
+        "isLongMode": false,
+    }, 
+    "3d": {
+        "name": "3 days",
+        "isActive": isAmateur(),
+        "isLongMode": false,
+    },
+    "7d": {
+        "name": "7 days",
+        "isActive": isAmateur(),
+        "isLongMode": false,
+    }, 
+    "31d": {
+        "name": "1 month",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    }, 
+    "186d": {
+        "name": "6 months",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    },
+    "366d": {
+        "name": "1 year",
+        "isActive": isAmateur(),
+        "isLongMode": true,
+    }
+}
+
+function setTimePeriod(text) {
+    if(!modeList[text] || !modeList[text].isActive || modeList[text].isLongMode) {
+        return (is_mobile) ? modeDefaultMobile : modeDefault;
+    }
+    return text;
+}
+
+function isLongMode(text) {
+    return modeList[text].isLongMode;
+}
+
+// Professional
 var modeDefault = "3h";
 var modeDefaultMobile = "1h";
+
+if (isAmateur()) {
+    var modeDefault = "12h";
+    var modeDefaultMobile = "12h";
+}
 
 // order of map elements
 var Z_RANGE = 1;
@@ -112,70 +216,15 @@ var Z_ME = 11;
 var Z_SHADOW = 1000000;
 var Z_CAR = 1000001;
 var Z_PAYLOAD = 1000002;
-var Z_RECOVERY = 1000003;
+var Z_RECOVERY = 1000003; // Professional
 
-// SondeHub V1 types
-
-var v1types = {
-    "RS41": "RS41",
-    "RS41-Ozone": "RS41",
-    "RS41-SGP-Ozone": "RS41-SGP",
-    "RS41-SG": "RS41-SG",
-    "RS41-SG-Ozone": "RS41-SG",
-    "RS41-SGP": "RS41-SGP",
-    "RS41-SGM": "RS41-SGM",
-    "RS41-NG": "RS41-NG",
-    "RS92": "RS92",
-    "RS92-Ozone": "RS92",
-    "IMET": "iMet-4",
-    "iMet": "iMet-4",
-    "DFM": "DFM",
-    "DFM06": "DFM06",
-    "DFM09": "DFM09",
-    "DFMxB": "DFM",
-    "DFMxC": "DFM",
-    "DFMx7": "DFMx7",
-    "DFMx9": "DFMx9",
-    "DFM17": "DFM17",
-    "DFM09P": "DFM09P",
-    "MK2LMS": "LMS6-1680",
-    "LMS6": "LMS6-400",
-    "M10": "M10",
-    ",M10": "M10",
-    "M10-Ptu": "M10",
-    "M20": "M20",
-    "MEISEI": "IMS100",
-    "IMS100": "IMS100",
-    "IMET5": "iMet-5x"
-}
-
-var v1manufacturers = {
-    "RS92": "Vaisala", 
-    "RS41": "Vaisala",
-    "RS41-SG": "Vaisala",
-    "RS41-SGP": "Vaisala",
-    "RS41-SGM": "Vaisala",
-    "RS41-NG": "Vaisala",
-    "iMet-4": "Intermet Systems",
-    "iMet-5x": "Intermet Systems",
-    "DFM": "Graw",
-    "DFM06": "Graw",
-    "DFM09": "Graw",
-    "DFMx7": "Graw",
-    "DFMx9": "Graw",
-    "DFM17": "Graw",
-    "DFM09P": "Graw",
-    "LMS6-400": "Lockheed Martin",
-    "LMS6-1680": "Lockheed Martin",
-    "M10": "Meteomodem",
-    "M20": "Meteomodem",
-    "PS20": "Meteomodem"
-}
 
 var globalKeys = {
     "ascentrate": "Ascent Rate",
     "battery_percent": "Battery",
+    "temp": "Temperature", // Amateur
     "temperature_external": "Temperature, External",
+    "ext_temperature": "Temperature, External", // Amateur
     "pressure_internal": "Pressure, Internal",
     "voltage_solar_1": "Voltage, Solar 1",
     "voltage_solar_2": "Voltage, Solar 2",
@@ -195,12 +244,19 @@ var globalKeys = {
     "batt": "Battery Voltage",
     "sats": "GNSS SVs Used",
     "humidity": "Relative Humidity",
+    "ext_humidity": "Relative Humidity, External", // Amateur
+    "ext_pressure": "Pressure, External", // Amateur
     "subtype": "Sonde Sub-type",
     "frequency": "Frequency",
-    "frequency_tx": "TX Frequency",
+    "frequency_tx": "TX Frequency", // Professional
+    "tx_frequency": "TX Frequency", // Amateur
     "manufacturer": "Manufacturer",
     "type": "Sonde Type",
     "burst_timer": "Burst Timer",
+    "ascent_rate": "Ascent Rate", // Amateur
+    "pyro_voltage": "Cutdown Voltage", // Amateur 
+    "noise_floor_dbm": "Radio Noise Floor", // Amateur 
+    // Professional
     "xdata": "XDATA",
     "xdata_instrument": "XDATA Instrument",
     "oif411_instrument_number": "OIF411 Instrument Number",
@@ -271,12 +327,16 @@ var globalSuffixes = {
     "current": " A",
     "battery": " V",
     "batt": " V",
+    "ascent_rate": " m/s", // Amateur
     "solar_panel": " V",
+    "temp": "&deg;C", // Amateur
     "temperature": "&deg;C",
     "temperature_internal": "&deg;C",
     "temperature_external": "&deg;C",
+    "ext_temperature": "&deg;C", // Amateur
     "temperature_radio": "&deg;C",
     "pressure": " hPa",
+    "ext_pressure": " hPa", // Amateur
     "voltage_solar_1": " V",
     "voltage_solar_2": " V",
     "battery_percent": "%",
@@ -288,8 +348,13 @@ var globalSuffixes = {
     "iss_elevation": "&deg;",
     "light_intensity": " lx",
     "humidity": " %",
+    "ext_humidity": " %", // Amateur
     "frequency": " MHz",
-    "frequency_tx": " MHz",
+    "tx_frequency": " MHz", // Amateur
+    "frequency_tx": " MHz", // Professional
+    "noise_floor_dbm": " dBm", // Amateur
+    "spam": "", // Amateur 
+    // Professional
     "spam": "",
     "oif411_ext_voltage": " V",
     "oif411_ozone_battery_v": " V",
@@ -328,16 +393,32 @@ var globalSuffixes = {
     "tacho_rpm": " RPM"
 };
 
+var keyOrder = [ // Amateur
+    "ascent_rate",
+    "batt",
+    "frequency",
+    "tx_frequency",
+    "humidity",
+    "pressure",
+    "sats",
+    "temp",
+    "comment",
+    "modulation"
+]
+
 // localStorage vars
 var ls_receivers = false;
 var ls_pred = false;
 
-// AWS S3
-AWS.config.region = 'us-east-1';
-  
-var s3 = new AWS.S3({
-    params: {Bucket: 'sondehub-history'}
-});
+// Professional Start
+    // AWS S3
+    AWS.config.region = 'us-east-1';
+    
+    var s3 = new AWS.S3({
+        params: {Bucket: 'history'},
+        endpoint: 'https://sondehub.org'
+    });
+    // Professional End
 
 var tempLaunchData = {};
 
@@ -384,13 +465,6 @@ var plot_options = {
         }
     ]
 };
-
-// aprs overlay (not used)
-var overlayARPS = new L.tileLayer('http://{s}.tiles.tracker.habhub.org/aprs/tile_{z}_{x}_{y}.png', {
-	subdomains: 'abc',
-    maxZoom: 6,
-    attribution: '&copy; <a href="https://tracker.habhub.org/">HabHub</a>'
-});
 
 //Global Precipitation Weather
 var RainRadar = new L.tileLayer('https://tilecache.rainviewer.com/v2/radar/' + (Math.floor(new Date().getTime() / 600000) * 600) + '/512/{z}/{x}/{y}/1/1_0.png', {
@@ -466,68 +540,6 @@ function calculate_lookangles(a, b) {
         'great_circle_distance': great_circle_distance,
         'bearing': str_bearing
     };
-}
-
-function getPressure(altitude){
-
-    // Constants
-    airMolWeight = 28.9644;  // Molecular weight of air
-    densitySL = 1.225;  // Density at sea level [kg/m3]
-    pressureSL = 101325;  // Pressure at sea level [Pa]
-    temperatureSL = 288.15;  // Temperature at sea level [deg K]
-    gamma = 1.4;
-    gravity = 9.80665;  // Acceleration of gravity [m/s2]
-    tempGrad = -0.0065;  // Temperature gradient [deg K/m]
-    RGas = 8.31432;  // Gas constant [kg/Mol/K]
-    R = 287.053;
-    deltaTemperature = 0.0;
-
-    // Lookup Tables
-    altitudes = [0, 11000, 20000, 32000, 47000, 51000, 71000, 84852];
-    pressureRels = [
-        1,
-        2.23361105092158e-1,
-        5.403295010784876e-2,
-        8.566678359291667e-3,
-        1.0945601337771144e-3,
-        6.606353132858367e-4,
-        3.904683373343926e-5,
-        3.6850095235747942e-6,
-    ];
-    temperatures = [288.15, 216.65, 216.65, 228.65, 270.65, 270.65, 214.65, 186.946];
-    tempGrads = [-6.5, 0, 1, 2.8, 0, -2.8, -2, 0];
-    gMR = gravity * airMolWeight / RGas;
-
-    // Pick a region to work in
-    i = 0;
-    if (altitude > 0){
-        while (altitude > altitudes[i + 1]){
-            i = i + 1;
-        }
-    }
-
-    // Lookup based on region
-    baseTemp = temperatures[i];
-    tempGrad = tempGrads[i] / 1000.0;
-    pressureRelBase = pressureRels[i];
-    deltaAltitude = altitude - altitudes[i];
-    temperature = baseTemp + tempGrad * deltaAltitude;
-
-    // Calculate relative pressure
-    if(Math.abs(tempGrad) < 1e-10){
-        pressureRel = pressureRelBase * Math.exp(
-            -1 * gMR * deltaAltitude / 1000.0 / baseTemp
-        );
-    } else{
-        pressureRel = pressureRelBase * Math.pow(
-            baseTemp / temperature, gMR / tempGrad / 1000.0
-        );
-    }
-
-    // Finally, work out the pressure
-    pressure = pressureRel * pressureSL;
-
-    return pressure/100.0; // Return pressure in hPa
 }
 
 function update_lookangles(vcallsign) {
@@ -616,7 +628,7 @@ var highSight = L.tileLayer('https://api.highsight.dev/v1/tiles/{z}/{x}/{y}?key=
     maxZoom: 9,
     minZoom: 3,
     crossOrigin: true
-  });
+});
 
 highSight.id = "HighSight";
 
@@ -634,6 +646,7 @@ var openfreemap_dark = L.maplibreGL({
     style: 'https://tiles.openfreemap.org/styles/dark',
 });
 openfreemap_dark.id = "OpenFreeMap-Dark";
+// Sondehub Professional End
 
 var baseMaps = {
     "Mapnik": osm,
@@ -642,6 +655,7 @@ var baseMaps = {
     "Terrain": stamen_terrain,
     "Voyager": cartodb_voyager,
     "OpenTopoMap": opentopomap,
+    // Professional Only 
     "HighSight": highSight,
     "OFM-Liberty": openfreemap_liberty,
     "OFM-Dark": openfreemap_dark
@@ -687,7 +701,10 @@ function throttle_events(event) {
     }
 }
 
-function sub_to_nearby_sondes(){
+function sub_to_nearby_sondes(){ // Only in Professional
+    if (!isProfessional()) {
+        return;
+    }
     let bounds = map.getBounds().pad(1); // expand by one viewport
     let zoomed_out = map.getZoom() <= 8;
     const sub_logging = false;
@@ -763,27 +780,36 @@ function clean_refresh(text, force, history_step) {
         $("#stText").text("");
     }
 
+    // Combined
     try {
         for (let topic in clientTopic){
             client.unsubscribe(topic);
         }
+        var topicPrefix =  isProfessional() ? "sondes-new/" : "amateur/";
+
         if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
-            var topic = "sondes/" + wvar.query;
+            if (isProfessional()) {
+                topicPrefix = "sondes/"
+                client.subscribe("prediction/"+wvar.query);
+                client.subscribe("reverse-prediction/"+wvar.query);
+            }
+            var topic = wvar.query.split(",").map(function(el) { 
+                return topicPrefix + el; 
+            });
             client.subscribe(topic);
-            client.subscribe("prediction/"+wvar.query);
-            client.subscribe("reverse-prediction/"+wvar.query);
-            clientTopic = [topic];
+            clientTopic = topic;
         } else {
-            client.subscribe("sondes-new/#");
-            clientTopic =["sondes-new/#"];
+            client.subscribe(topicPrefix + "#");
+            clientTopic = [topicPrefix + "#"];
         }
-    } catch (err) {}
+    } catch (err) {console.error(err)}
 
     // reset mode if, invalid mode is specified
-    if(modeList.indexOf(text) == -1) text = (is_mobile) ? modeDefaultMobile : modeDefault;
+    text = setTimePeriod(text);
 
     wvar.mode = text;
     document.getElementById("timeperiod").value = text;
+    document.getElementById("timeperiod").disabled = true; // Only on Amateur
 
     position_id = 0;
 
@@ -801,30 +827,30 @@ function clean_refresh(text, force, history_step) {
 
     // add loading spinner in the vehicle list
     $('#main .empty').parent().remove();
+
+    // Combined (Probably Pro version is fine)
     $(".scrollwrapper").append(
-        '<div class="row" id="spinner"><div class="header empty">' +
+        '<div class="row vehicle'+elm_uuid+'" id="spinner"><div class="header empty">' +
         '<img style="width:90px;height:30px" src="img/hab-spinner.gif"/></div></div>'
     );
-    listScroll.refresh();
 
     lhash_update(history_step);
 
     clearTimeout(periodical);
     clearTimeout(periodical_focus);
     clearTimeout(periodical_focus_new);
-    clearTimeout(periodical_receivers);
-    clearTimeout(periodical_listeners);
 
     refresh();
     if (!offline.get("opt_hide_chase")) {
         refreshNewReceivers(true);
     }
 
-    sub_to_nearby_sondes();
+    sub_to_nearby_sondes(); // Professional Only
     return true;
 }
 
-function load() {
+function load() { 
+    // Amateur hardcoded coords and zoom, so using pro stuff.
     coords = offline.get("mc");
     if (coords == null) {
         coords = [53.467511,-2.233894];
@@ -834,15 +860,16 @@ function load() {
     if (zoomLevel == null) {
         zoomLevel = 5;
     }
-
+    
     //initialize map object
     map = new L.map(document.getElementById('map'), {
         zoom: zoomLevel,
         zoomControl: false,
         zoomAnimationThreshold: 0,
-        zoomAnimation: true,
-        markerZoomAnimation: false,
-        center: coords,
+        scrollWheelZoom: false,
+        smoothWheelZoom: true,
+        smoothSensitivity: 4,
+        center: [-34.8571721,138.7100468],
         layers: baseMaps[selectedLayer],
         worldCopyJump: true,
         preferCanvas: true,
@@ -892,8 +919,26 @@ function load() {
     L.Control.PeriodControl = L.Control.extend({
         onAdd: function(map) {
             var div = L.DomUtil.create('div');
-    
-            div.innerHTML = '<select name="timeperiod" id="timeperiod" style="width:auto !important;height:30px;" onchange="clean_refresh(this.value)"><option value="0">Live Only</option><option value="1h">1 hour</option><option value="3h" selected="selected">3 hours</option><option value="6h">6 hours</option><option value="12h">12 hours</option></select>';
+
+            var selectbox = document.createElement("select");
+            selectbox.id = "timeperiod"
+            selectbox.name = "timeperiod"
+            selectbox.setAttribute("onchange", "clean_refresh(this.value)");
+            selectbox.style = "width:auto !important;height:30px;";
+
+            for (const [key, value] of Object.entries(modeList)) {
+                if (value.isActive) {
+                    var option = document.createElement("option");
+                    option.value = key;
+                    option.innerText = value.name;
+
+                    if (value.isLongMode) {
+                        option.disabled = true;
+                    }
+                    selectbox.appendChild(option)
+                }
+            }
+            div.appendChild(selectbox);
             div.innerHTML.onload = setTimeValue();
 
             return div;
@@ -910,6 +955,7 @@ function load() {
     
     L.control.periodcontrol({ position: 'topleft' }).addTo(map);
 
+    // Historical Control = Sondehub Professional
     L.Control.HistoricalControl = L.Control.extend({
         onAdd: function(map) {
             var div = L.DomUtil.create('div');
@@ -954,6 +1000,38 @@ function load() {
     
     L.control.predictionontrol({ position: 'topleft' }).addTo(map);
 
+    // Modulation Filter = Sondehub Amateur
+    L.Control.ModulationFilter = L.Control.extend({
+         onAdd: function(map) {
+            var div = L.DomUtil.create('div');
+    
+            div.innerHTML = `<select class="amateur-element" name="modulationfilter" id="modulationfilter" style="width:auto !important;height:30px;" onchange="sidebar_update(this.value);lhash_update();">
+                <option value="all">All</option>
+                <option value="APRS">APRS</option>
+                <option value="Horus Binary">Horus Binary</option>
+                <option value="LoRa">LoRa</option>
+                <option value="RTTY">RTTY</option>
+                <option value="TTN">TTN</option>
+                <option value="Wenet">Wenet</option>
+                <option value="WSPR">WSPR</option>
+            </select>`;
+            div.innerHTML.onload = setTimeValue();
+
+            return div;
+        },
+        onRemove: function(map) {
+            // Nothing to do here
+        }
+    })
+
+    L.control.modulationcontrol = function(opts) {
+        return new L.Control.ModulationFilter(opts);
+    }
+    L.control.modulationcontrol({ position: 'topleft' }).addTo(map);
+    // Modulation Filter End
+
+    // update current position if we geolocation is available
+    if(currentPosition) updateCurrentPosition(currentPosition.lat, currentPosition.lon); // Amateur Only
 
     //Receiver canvas
     receiverCanvas = new L.LayerGroup();
@@ -967,30 +1045,36 @@ function load() {
 
     if (offline.get("opt_daylight")) {
         map.addLayer(nite);
+        startNiteUpdate(); // Only in Amateur
     }
 
-    getLaunchSites();
+    // Professional Only
+    if (isProfessional()) {
+        getLaunchSites();
 
-    if (!offline.get("opt_layers_launches")) {
-        map.addLayer(launches);
-    }
-
-    // Save popup content on close for stations
-    map.on('popupclose', function(e) {
-        try {
-            var station = e["popup"]["_source"]["title"];
-            var popup = $("#popup" + station);
-            if (popup.length) {
-                e.popup.setContent("<div id='popup" + station + "'>" + popup.html() + "</div>");
-            }
-        } catch(err) {
-            return;
+        if (!offline.get("opt_layers_launches")) {
+            map.addLayer(launches);
         }
-    });
+
+        // Save popup content on close for stations
+        map.on('popupclose', function(e) {
+            try {
+                var station = e["popup"]["_source"]["title"];
+                var popup = $("#popup" + station);
+                if (popup.length) {
+                    e.popup.setContent("<div id='popup" + station + "'>" + popup.html() + "</div>");
+                }
+            } catch(err) {
+                return;
+            }
+        });
+    }
+    // Professional Only end
 
     map.on('moveend', function (e) {
         lhash_update();
         sidebar_update();
+        // Professional Only
         sub_to_nearby_sondes();
 
         var latlng = map.getCenter();
@@ -1004,32 +1088,33 @@ function load() {
     });
 
     map.on('zoomend', function() {
-        sub_to_nearby_sondes();
+        sub_to_nearby_sondes(); // Professional Only
         //do check for horizon labels
-        for (key in vehicles) {
-            if (vehicles[key]["vehicle_type"] == "balloon") {
-                if (vehicles[key]["horizon_circle"]["_map"]) 
-                {
-                    try {
-                        var zoom = map.getZoom();
-                        var horizonzoom = (Math.abs(Math.log(vehicles[key]["horizon_circle"].getRadius()/2000000)/0.75));
-                        var subhorizonzoom = (Math.abs(Math.log(vehicles[key]["subhorizon_circle"].getRadius()/2000000)/0.75));
-                        if (horizonzoom > zoom) {
-                            map.removeLayer(vehicles[key]["horizon_circle_title"]);
-                        } else {
-                            map.addLayer(vehicles[key]["horizon_circle_title"]);
-                        }
-                        if (subhorizonzoom > zoom) {
-                            map.removeLayer(vehicles[key]["subhorizon_circle_title"]);
-                        } else {
-                            map.addLayer(vehicles[key]["subhorizon_circle_title"]);
-                        }
-                    } catch(e){};
+        if (offline.get("opt_hide_horizon")) { //Horizon lines are back!
+            for (key in vehicles) {
+                if (vehicles[key]["vehicle_type"] == "balloon") {
+                    if (vehicles[key]["horizon_circle"]["_map"]) 
+                    {
+                        try {
+                            var zoom = map.getZoom();
+                            var horizonzoom = (Math.abs(Math.log(vehicles[key]["horizon_circle"].getRadius()/2000000)/0.75));
+                            var subhorizonzoom = (Math.abs(Math.log(vehicles[key]["subhorizon_circle"].getRadius()/2000000)/0.75));
+                            if (horizonzoom > zoom) {
+                                map.removeLayer(vehicles[key]["horizon_circle_title"]);
+                            } else {
+                                map.addLayer(vehicles[key]["horizon_circle_title"]);
+                            }
+                            if (subhorizonzoom > zoom) {
+                                map.removeLayer(vehicles[key]["subhorizon_circle_title"]);
+                            } else {
+                                map.addLayer(vehicles[key]["subhorizon_circle_title"]);
+                            }
+                        } catch(e){};
+                    }
                 }
             }
         }
         updateZoom();
-        recoveryPopup();
     });
 
     map.on('movestart', function() {
@@ -1050,7 +1135,6 @@ function load() {
             lhash_update();
         });
 
-        //startAjax();
         liveData();
     };
 
@@ -1115,10 +1199,34 @@ function load() {
               $("#lookanglesbox .nofollow").fadeIn(500, "easeOut");
           }
         });
+        // Only in Amateur
+        // if there is enough screen space open aboutbox on startup
+        if (!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) {
+            $('.nav li[function=about]').click();
+        }
 
-       
     }, 500);
 }
+
+// Amateur Only Mode, for time periods > month
+function setLongTimePeriods(state){
+    if (!isAmateur()) {
+        return;
+    }
+    // Enable or disable the 'long' timeperiod settings (>1 month)
+    $("#timeperiod option").each(function() {
+        var $thisOption = $(this);
+    
+        if(isLongMode($thisOption.val())){
+            if(state){
+                $thisOption.attr("disabled", false);
+            } else {
+                $thisOption.attr("disabled", true);
+            }
+        }
+    });
+}
+
 
 function setTimeValue() {   
     setTimeout(function() {
@@ -1129,7 +1237,7 @@ function setTimeValue() {
 function shareVehicle(callsign) {
     const shareData = {
         title: 'SondeHub: ' + vehicles[callsign].marker.options.title + ' Flight Information',
-        text: 'You can view the flight path and sensor data for ' + vehicles[callsign].marker.options.title + ' on the SondeHub tracker!',
+        text: 'You can view the flight path and sensor data for ' + vehicles[callsign].marker.options.title + ' on the ' + sondehubTypeName + '!',
         url: window.location.origin + '/' + callsign,
     }
     try {
@@ -1137,7 +1245,6 @@ function shareVehicle(callsign) {
     } catch (e) {
         console.log("Error sharing: " + e);
     }
-    
 }
 
 function openURL(address){
@@ -1147,86 +1254,140 @@ function openURL(address){
 function panTo(vcallsign) {
     if(!vcallsign || vehicles[vcallsign] === undefined) return;
 
-    alwaysSub.push(vcallsign);
+    if (isProfessional()) {
+        alwaysSub.push(vcallsign);
 
-    for (let serial in vehicles) {
-        if (!alwaysSub.includes(serial)){
-            vehicles[serial].polyline_visible = false;
-            set_polyline_visibility(serial,false);
+        for (let serial in vehicles) {
+            if (!alwaysSub.includes(serial)){
+                vehicles[serial].polyline_visible = false;
+                set_polyline_visibility(serial,false);
+            }
         }
+
+        // Seems like Amateur probably refreshes predictions differently
+        // update predictions
+        $.ajax({
+            type: "GET",
+            url: predictions_url + vcallsign,
+            data: "",
+            dataType: "json",
+            serial: vcallsign,
+            success: function(response, textStatus) {
+                updatePredictions(response);
+                set_polyline_visibility(this.serial,true);
+            }
+        });
+
+        // Launch prediction not used in Amateur
+        var data_str = "duration=" + wvar.mode + "&vehicles=" + vcallsign;
+        $.ajax({
+            type: "GET",
+            url: launch_predictions_url,
+            data: data_str,
+            dataType: "json",
+            serial: vcallsign,
+            success: function(response, textStatus) {
+                updateLaunchPredictions(response);
+                set_polyline_visibility(this.serial,true);
+            }
+        });
+
+        vehicles[vcallsign].polyline_visible = true;
+        set_polyline_visibility(vcallsign,true);
     }
-
-    // update predictions
-    $.ajax({
-        type: "GET",
-        url: predictions_url + vcallsign,
-        data: "",
-        dataType: "json",
-        serial: vcallsign,
-        success: function(response, textStatus) {
-            updatePredictions(response);
-            set_polyline_visibility(this.serial,true);
-        }
-    });
-
-    var data_str = "duration=" + wvar.mode + "&vehicles=" + vcallsign;
-    $.ajax({
-                type: "GET",
-                url: launch_predictions_url,
-                data: data_str,
-                dataType: "json",
-                serial: vcallsign,
-                success: function(response, textStatus) {
-                    updateLaunchPredictions(response);
-                    set_polyline_visibility(this.serial,true);
-                }
-    });
-
-    vehicles[vcallsign].polyline_visible = true;
-    set_polyline_visibility(vcallsign,true);
     // update lookangles
     update_lookangles(vcallsign);
 
+    var maxZoom = 10; // 8 in Amateur, 10 in Professional
     // pan map
-    if (map.getZoom() > 10) {
+    if (map.getZoom() > maxZoom) {
         map.setView(vehicles[vcallsign].marker.getLatLng());
     } else {
-        map.setView(vehicles[vcallsign].marker.getLatLng(), 10);
+        map.setView(vehicles[vcallsign].marker.getLatLng(), maxZoom);
     }
 }
 
-function panToRecovery(rcallsign) {
-    if(offline.get('opt_hide_recoveries')) alert("Recovered Sonde Hidden, enable in settings");
-    //if mobile close panel
-    if (is_mobile) {
-        $('.flatpage, #homebox').hide();
-        lhash_update(true);
-    }
-    for (let i = 0; i < recoveries.length; i++) {
-        if (recoveries[i].hasOwnProperty('serial')) {
-            if (recoveries[i]['serial'] == rcallsign) {
-                //pan map
-                map.setView(recoveries[i]['marker'].getLatLng(), 10);
+// modulation Filter Amateur
+function isVehicleFiltered(serial){
+    if ( document.getElementById("modulationfilter") && document.getElementById("modulationfilter").value && document.getElementById("modulationfilter").value != "all"){
+        if (vehicles[serial]['vehicle_type'] != 'balloon'){
+            return false
+        } else {
+            if (vehicles[serial] && vehicles[serial]['curr_position'] &&
+                vehicles[serial]['curr_position'] && 
+                vehicles[serial]['curr_position']['data'] &&
+                vehicles[serial]['curr_position']['data']['modulation'] &&
+                vehicles[serial]['curr_position']['data']['modulation'].includes(document.getElementById("modulationfilter").value)) {
+                return false
+            } else {
+                return true
             }
         }
     }
+    return false;
 }
 
 function sidebar_update() {
     for (let serial in vehicles) {
-        var p = document.getElementById("pv"+vehicles[serial].uuid)
-        var l = document.getElementById("lv"+vehicles[serial].uuid)
-        var state = "block"
-        if (offline.get('opt_selective_sidebar')) {
-            if (map.getBounds().contains(vehicles[serial].marker.getLatLng())) {
-                state = "block"
+        if (isAmateur()) {
+            // Simplified Amateur vehicle display logic
+            if (offline.get('opt_selective_sidebar')) {
+                if (map.getBounds().contains(vehicles[serial].marker.getLatLng()) && !isVehicleFiltered(serial)) {
+                    addVehicleToMap(serial);
+                } else if (!$("#main .vehicle" + vehicles[serial].uuid).hasClass("follow")) {
+                    removeVehicleFromMap(serial);
+                }
+            } else if (!isVehicleFiltered(serial)) {
+                addVehicleToMap(serial);
             } else {
-                state = "none"
+                removeVehicleFromMap(serial);
             }
         }
-        if (p) { p.style.display=state}
-        if (l) { l.style.display=state }
+        else if (isProfessional()) {
+            var p = document.getElementById("pv"+vehicles[serial].uuid)
+            var l = document.getElementById("lv"+vehicles[serial].uuid)
+            var state = "block"
+            if (offline.get('opt_selective_sidebar')) {
+                if (map.getBounds().contains(vehicles[serial].marker.getLatLng())) {
+                    state = "block"
+                } else {
+                    state = "none"
+                }
+            }
+            if (p) { p.style.display=state}
+            if (l) { l.style.display=state }
+        }
     }
+
+    // Show Horizon Lines - Amateur
+    if (offline.get("opt_hide_horizon")) {
+        showHorizonRings();     
+    } else {
+        hideHorizonRings();  
+    }
+}
+
+
+// Removed from the vehicle display logic to simply it. Amateur
+function addVehicleToMap(serial) {
+    $("#main .vehicle" + vehicles[serial].uuid).show();
+    vehicles[serial].marker.addTo(map);
+    if (vehicles[serial].marker_shadow) {
+        vehicles[serial].marker_shadow.addTo(map);
+    }
+    set_polyline_visibility(serial, true);
+}
+
+// Removed from the vehicle display logic to simply it. Amateur
+function removeVehicleFromMap(serial){
+    $("#main .vehicle" + vehicles[serial].uuid).hide();
+    if (vehicles[serial].marker){ 
+        map.removeLayer(vehicles[serial].marker);
+    }
+    if (vehicles[serial].marker_shadow) {
+        map.removeLayer(vehicles[serial].marker_shadow);
+    }
+    set_polyline_visibility(serial, false);
 }
 
 function title_case(s) {
@@ -1235,31 +1396,52 @@ function title_case(s) {
   });
 }
 
+// Used in a bunch of places. Pro had inlne update timer in a bunch of locations
+function startNiteUpdate() {
+    if (!nite) return;
+
+    nite.setTime();
+
+    if (niteupdate === null) {
+        niteupdate = setInterval(function() {
+            nite.setTime();
+        }, 60000);
+    }
+}
+
+function stopNiteUpdate() {
+    if (niteupdate !== null) {
+        clearInterval(niteupdate);
+        niteupdate = null;
+    }
+}
+
 function guess_name(key) {
   return title_case(key.replace(/_/g, " "));
 }
 
 function habitat_data(jsondata, data_ages, current_timestamp, alternative) {
-  var keys = globalKeys;
+    var keys = globalKeys;
 
-  var tooltips = {
-    "burst_timer": "If active, this indicates the time (HH:MM:SS) until the radiosonde will automatically power-off.",
-    "xdata": "Raw auxiliary data (as hexadecimal) from an external sensor package (often an Ozone sensor).",
-    "oif411_O3_partial_pressure": "Estimated O3 partial pressure, using nominal calibration values. +/- 1 mPa.",
-    "rs41_mainboard": "A last digit of '4' may indicate this is a new (~2023) PCB."
-  }
-
-  var hide_keys = {
-    "spam": true,
-    "battery_millivolts": true,
-    "temperature_internal_x10": true,
-    "uplink_rssi_raw": true,
-    "oif411_instrument_number": true,
-    "oif411_ext_voltage": true,
-    "cfh_instrument_number": true,
-    "cobald_instrument_number": true,
-    "cobald_sonde_number": true
-  };
+    var tooltips = {
+        "burst_timer": "If active, this indicates the time (HH:MM:SS) until the radiosonde will automatically power-off.",
+        "frequency": "Estimated frequency of the transmitter, may be impacted by receiver frequency inaccuracies.",
+        "ascent_rate": "Instantaneous ascent rate, provided by the payload.",
+        "xdata": "Raw auxiliary data (as hexadecimal) from an external sensor package (often an Ozone sensor).",
+        "oif411_O3_partial_pressure": "Estimated O3 partial pressure, using nominal calibration values. +/- 1 mPa.",
+        "rs41_mainboard": "A last digit of '4' may indicate this is a new (~2023) PCB."
+    };
+    var hide_keys = {
+        "spam": true,
+        "battery_millivolts": true,
+        "temperature_internal_x10": true,
+        "uplink_rssi_raw": true,
+        "oif411_instrument_number": true,
+        "oif411_ext_voltage": true,
+        "cfh_instrument_number": true,
+        "cobald_instrument_number": true,
+        "cobald_sonde_number": true
+    };
 
   var suffixes = globalSuffixes;
 
@@ -1269,39 +1451,60 @@ function habitat_data(jsondata, data_ages, current_timestamp, alternative) {
 
     var data = (typeof jsondata === "string") ? $.parseJSON(jsondata) : jsondata;
     var array = [];
+    var tempArray = []; // Amateur only
     var output = "";
-    var txFreq = false
-    var xdataFound = false
+    var txFreq = false;
+    var xdataFound = false; // Pro Only
 
     if(Object.keys(data).length === 0) return "";
 
-    if ("frequency_tx" in data) {
+    if ("tx_frequency" in data || "frequency_tx" in data) {
         txFreq = true
     }
 
-    if ("xdata_instrument" in data) {
-        xdataFound = true
+    if ("xdata_instrument" in data) { // Pro Only
+        xdataFound = true;
     }
 
-    for(var key in data) {
-        if ((key === "frequency" && txFreq) || (key === "xdata" && xdataFound)) {} else {
-            if(data_ages.hasOwnProperty(key)){
-                key_age = data_ages[key];
-            } else {
-                key_age = current_timestamp;
+    if (isProfessional()) {
+        for(var key in data) {
+            if ((key === "frequency" && txFreq) || (key === "xdata" && xdataFound)) {
+
             }
-            array.push([key, data[key], key_age]);
+            else {
+                if(data_ages.hasOwnProperty(key)){
+                    key_age = data_ages[key];
+                } else {
+                    key_age = current_timestamp;
+                }
+                array.push([key, data[key], key_age]);
+            }
         }
     }
+    else if (isAmateur()) {
+        for (var field in keyOrder) {
+            if (keyOrder[field] in data) {
+                if (keyOrder[field] === "frequency" && txFreq) {
 
-    //array.sort(function(a, b) {
-    //    return a[0].localeCompare(b[0]);
-    //});
+                }
+                else {
+                    array.push([keyOrder[field], data[keyOrder[field]]]);
+                    tempArray.push(keyOrder[field]);
+                }
+            }
+        }
 
+        for (var key in data) {
+            if (!tempArray.includes(key)) {
+                array.push([key, data[key]]);
+                tempArray.push(key);
+            }
+        }
+    }
     for(var i = 0, ii = array.length; i < ii; i++) {
       var k = array[i][0]; // key
       var v = array[i][1]; // value
-      var ka = array[i][2]; // age
+      var ka = array[i][2]; // age // Only used in Professional
       if (hide_keys[k] === true)
         continue;
 
@@ -1339,25 +1542,26 @@ function habitat_data(jsondata, data_ages, current_timestamp, alternative) {
           } else {
               v = "Unknown";
           }
-      }
+        }
+        if (isProfessional()) {
+            // Round frequency data
+            if(k === "frequency"){
+                v = v.toFixed(3);
+            }
 
-      // Round frequency data
-      if(k === "frequency"){
-        v = v.toFixed(3);
-      }
-
-      // Check if data is considered to be 'old'
-      // Need to think about how to style old data.
-      // Maybe make the text grey?
-      // At what point should we consider the data to be old?
-        if (ka < (current_timestamp - 20000)){
-            ka_age = (current_timestamp - ka)/1000;
-            name += " (" + ka_age.toFixed(0) + "s old)" ;
+            // Check if data is considered to be 'old'
+            // Need to think about how to style old data.
+            // Maybe make the text grey?
+            // At what point should we consider the data to be old?
+            if (ka < (current_timestamp - 20000)){
+                ka_age = (current_timestamp - ka)/1000;
+                name += " (" + ka_age.toFixed(0) + "s old)" ;
+            }
         }
 
       if(typeof alternative == 'boolean' && alternative) {
-        // This never gets called? We never seem to pass the alternative argument...
-        output += "<div><b>" + name + ":&nbsp;</b>" + v + suffix + "</div>";
+        // This never gets called? We never seem to pass the alternative argument... (Sondehub Pro Comment)
+          output += "<div><b>" + name + ":&nbsp;</b>" + v + suffix + "</div>";
       } else {
           if (tooltip != "") {
             output += "<dt>" + v + suffix + "</dt><dd>" + name + ' <div class="tooltip">🛈<span class="tooltiptext">' + tooltip + '</span></div></dd>';
@@ -1400,15 +1604,17 @@ function updateAltitude(vcallsign) {
 }
 
 function updateZoom() {
-    for(x in launches._layers){launches.getLayer(x).setRadius(Math.min(map.getZoom(),8))}
-    for(x in receivers){
+    for (x in launches._layers){
+        launches.getLayer(x).setRadius(Math.min(map.getZoom(),8))
+    }
+    for (x in receivers){
         var radius = 6;
         if (receivers[x].name in pledges){
             radius = radius * 1.3
         }
-        
         receivers[x].marker.setRadius(Math.min(map.getZoom(),radius))
     }
+
     for(var vcallsign in vehicles) {
         var vehicle = vehicles[vcallsign];
 
@@ -1456,7 +1662,7 @@ function drawLOSPaths(vcallsign) {
             receivers[r_index].marker.getLatLng(),
         ];
 
-        var p = new L.Polyline(path, {
+        var p = new L.Wrapped.Polyline(path, {
             color: '#0F0',
             opacity: 0.8,
             weight: 3,
@@ -1469,104 +1675,49 @@ function drawLOSPaths(vcallsign) {
     });
 }
 
-var recovery_popup = true;
-function recoveryPopup(){
-        // Conditions for showing this are:
-        // Zoom level >= 13
-        // A sonde is in the map view area. (Use the subscribed sondes for this)
-        // If a user position is available, that position is within 500km of the sonde.
-        recovery_popup_limit = 500000;
-
-        if( (map.getZoom() >= 13) && (clientTopic.length >= 2)){
-            if(recovery_popup == true){
-                // Logic to not show a popup if the centre of the map is > 500km from the viewer location,
-                _viewer_lat = parseFloat($('#cc_lat').text())
-                _viewer_lon = parseFloat($('#cc_lon').text())
-
-                if ( (_viewer_lat != 0.0) && (_viewer_lon != 0.0) ){
-
-                    _map_centre = {
-                        'lat':map.getCenter().lat,
-                        'lon':map.getCenter().lng,
-                        'alt':0.0
-                    };
-                    _viewer = {
-                        'lat': _viewer_lat,
-                        'lon': _viewer_lon,
-                        'alt': 0.0
-                    };
-            
-                    // Calculate the distance from the sonde
-                    _lookangles = calculate_lookangles(_viewer, _map_centre);
-
-                    if(_lookangles.range > recovery_popup_limit){
-                        return;
-                    }
-                }
-
-                // If we're here, then we either don't have a valid viewer location,
-                // Or the viewer is within 500km. Show the popup.
-                var recoveryNotice = document.getElementById("recovery_notice");
-                if (recoveryNotice) {
-                    recoveryNotice.style.display = "block";
-                }                
-                return;
-            }
-        }
-        var recoveryNotice = document.getElementById("recovery_notice");
-        if (recoveryNotice) {
-            recoveryNotice.style.display = "none";
-        }    
-    }
-
-function show_recoveries(){
-    // Open the recovery reporting tab
-    if ($("#recoveriesbox").is(':visible') == false){
-        $('.nav .recoveries').click();
-    }
-
-    // Hide the recovery notice
-    var recoveryNotice = document.getElementById("recovery_notice");
-    if (recoveryNotice) {
-        recoveryNotice.style.display = "none";
-    }
-
-    // Don't show the recovery notice again.
-    recovery_popup = false;
-}
-
-
 function focusVehicle(vcallsign, ignoreOpt) {
     var dont_focus = !offline.get('opt_hilight_vehicle') && ignoreOpt === undefined;
 
     var opacityFocused = 1;
-    var opacityOther = 0.4;
+    var opacityOther = 0.2;
+
+    if (dont_focus) {
+        return;
+    }
 
     for(var i in vehicles) {
         var vehicle = vehicles[i], j;
 
         if (vehicle.vehicle_type == "balloon") {
+            var opacitySet = opacityOther;
+
             if(i == vcallsign || vcallsign === null || dont_focus) {
-                vehicle.marker.setOpacity(opacityFocused)
-                var tooltip = vehicle.marker.getTooltip();
-                if (tooltip) tooltip.setOpacity(opacityFocused);
-                vehicle.marker_shadow.setOpacity(opacityFocused)
-                if(vehicle.horizon_circle) vehicle.horizon_circle.setStyle({opacity:opacityFocused * 0.6});
-                if(vehicle.horizon_circle_title) vehicle.horizon_circle_title.setOpacity(opacityFocused * 0.8);
-                if(vehicle.subhorizon_circle) vehicle.subhorizon_circle.setStyle({opacity:opacityFocused * 0.8});
-                if(vehicle.subhorizon_circle_title) vehicle.subhorizon_circle_title.setOpacity(opacityFocused * 0.8);
-                for(j in vehicle.polyline) vehicle.polyline[j].setStyle({opacity:opacityFocused});
+                opacitySet = opacityFocused;
             }
-            else {
-                vehicle.marker.setOpacity(opacityOther)
-                var tooltip = vehicle.marker.getTooltip();
-                if (tooltip) tooltip.setOpacity(opacityOther);
-                vehicle.marker_shadow.setOpacity(opacityOther)
-                if(vehicle.horizon_circle) vehicle.horizon_circle.setStyle({opacity:opacityOther * 0.6});
-                if(vehicle.horizon_circle_title) vehicle.horizon_circle_title.setOpacity(opacityOther * 0.6);
-                if(vehicle.subhorizon_circle) vehicle.subhorizon_circle.setStyle({opacity:opacityOther * 0.8});
-                if(vehicle.subhorizon_circle_title) vehicle.subhorizon_circle_title.setOpacity(opacityOther * 0.8);
-                for(j in vehicle.polyline) vehicle.polyline[j].setStyle({opacity:opacityOther});
+            vehicle.marker.setOpacity(opacitySet)
+            var tooltip = vehicle.marker.getTooltip();
+            if (tooltip) {
+                tooltip.setOpacity(opacitySet);
+            }
+            vehicle.marker_shadow.setOpacity(opacitySet);
+            if(vehicle.horizon_circle){ 
+                 vehicle.horizon_circle.setStyle({opacity:opacitySet * 0.6});
+            }
+            if(vehicle.horizon_circle_title) {
+                vehicle.horizon_circle_title.setOpacity(opacitySet * 0.8); // was 0.6 in other, but I assume that's a mistake
+            }
+            if(vehicle.subhorizon_circle){ 
+                vehicle.subhorizon_circle.setStyle({opacity:opacitySet * 0.8});
+            }
+            if(vehicle.subhorizon_circle_title){
+                 vehicle.subhorizon_circle_title.setOpacity(opacitySet * 0.8);
+            }
+            for(j in vehicle.polyline) {
+                 vehicle.polyline[j].setStyle({opacity:opacitySet});
+            }
+            if(vehicle.prediction_polyline) {
+                vehicle.prediction_polyline[0].setStyle({opacity:opacitySet * 0.8});
+                vehicle.prediction_polyline[1].setStyle({opacity:opacitySet * 0.1});
             }
         }
     }
@@ -1578,7 +1729,6 @@ function stopFollow(no_data_reset) {
 	if(follow_vehicle !== null) {
         if(!no_data_reset) {
             focusVehicle(null);
-            hideHorizonRings();
 
             // remove target mark
             $("#main .row.follow").removeClass("follow");
@@ -1627,7 +1777,9 @@ function followVehicle(vcallsign, noPan, force) {
 
 		follow_vehicle = vcallsign;
 		vehicles[follow_vehicle].follow = true;
-        updateHorizonVisibility();
+        if (isProfessional()) {
+            updateHorizonVisibility();
+        }
 
         // add target mark
         $("#main .row.follow").removeClass("follow");
@@ -1635,11 +1787,6 @@ function followVehicle(vcallsign, noPan, force) {
 
         updateGraph(vcallsign, true);
         drawLOSPaths(vcallsign);
-
-        if(!vcallsign.endsWith("_chase")){
-            $("#pr_serial").val(vcallsign);
-        }
-
 	}
 
     if(should_pan) {
@@ -1677,36 +1824,36 @@ function formatDate(date,utc) {
 
     if(typeof utc != "undefined") {
         z = date.getTimezoneOffset() / -60;
-        return a+'-'+b+'-'+c+' '+e+':'+f+':'+g+" UTC"+((z<0)?"-":"+")+z;
+        return a+'-'+b+'-'+c+'&nbsp;'+e+':'+f+':'+g+"&nbsp;UTC"+((z<0)?"-":"+")+z;
     } else {
-        return a+'-'+b+'-'+c+' '+e+':'+f+':'+g;
+        return a+'-'+b+'-'+c+'&nbsp;'+e+':'+f+':'+g;
     }
 }
 
 function updateVehicleInfo(vcallsign, newPosition) {
     // Note - at this point, vehicles[vcallsign].curr_position has already been set to the values in newPosition
     // so the newPosition argument is kind of redundant, we could just extract curr_position and use that.
-  var vehicle = vehicles[vcallsign];
+    var vehicle = vehicles[vcallsign];
 
+    if (isProfessional()) {
+        // Update data fields only if they are newer than whats already in the store.
+        for (var data_field_name in newPosition.data){
 
-  // Update data fields only if they are newer than whats already in the store.
-  for (var data_field_name in newPosition.data){
+            if(!vehicle.data_fields_age.hasOwnProperty(data_field_name)){
+                // Haven't seen this field name before, add it to the age object.
+                vehicle.data_fields_age[data_field_name] = 0;
+            }
 
-    if(!vehicle.data_fields_age.hasOwnProperty(data_field_name)){
-        // Haven't seen this field name before, add it to the age object.
-        vehicle.data_fields_age[data_field_name] = 0;
+            if(newPosition.gps_timestamp > vehicle.data_fields_age[data_field_name]){
+                vehicle.data_fields[data_field_name] = newPosition.data[data_field_name];
+                vehicle.data_fields_age[data_field_name] = newPosition.gps_timestamp;
+            }
+        }
     }
 
-    if(newPosition.gps_timestamp > vehicle.data_fields_age[data_field_name]){
-        vehicle.data_fields[data_field_name] = newPosition.data[data_field_name];
-        vehicle.data_fields_age[data_field_name] = newPosition.gps_timestamp;
+    if (!isNaN(newPosition.gps_lat) && !isNaN(newPosition.gps_lon)){
+        var latlng = new L.LatLng(newPosition.gps_lat, newPosition.gps_lon);
     }
-
-  }
-
-  if (!isNaN(newPosition.gps_lat) && !isNaN(newPosition.gps_lon)){
-    var latlng = new L.LatLng(newPosition.gps_lat, newPosition.gps_lon);
-  }
 
   // update position
   if(vehicle.marker_shadow) {
@@ -1766,14 +1913,14 @@ function updateVehicleInfo(vcallsign, newPosition) {
                  ) || (                             // or
                      newPosition.gps_alt < 600 &&   // under 600m and has no position update for more than 30 minutes
                      //(new Date().getTime() - convert_time(newPosition.gps_time)) > 1800000
-                     (new Date().getTime() - newPosition.gps_timestamp) > 1800000
+                     (new Date().getTime() - newPosition.gps_timestamp) > 1800000 // Amateur had `gps_time` instead of timestamp. not sure if that's a bug.
                  );
 
     if(landed) {
         vehicle.marker.setMode("landed");
     } else if(vehicle.ascent_rate > -1.5) {
         // Was -3.0 m/s, but this doesn't catch some slowly descending sonded under larger parachutes.
-        // Now trying -1.5 m/s
+        // Now trying -1.5 m/s        (Amateur was still on -3.0 m/s)
         vehicle.marker.setMode("balloon");
     } else {
         vehicle.marker.setMode("parachute");
@@ -1788,13 +1935,21 @@ function updateVehicleInfo(vcallsign, newPosition) {
                 // Balloon is still in flight, so update the marker.
                 vehicle.landing_marker.setLatLng(new L.LatLng(newPosition.data.pred_lat, newPosition.data.pred_lon));
                 // Re-add to map if it's been removed previously.
-                if (vehicle.landing_marker.getMap() == null){
+                
+                // Amateur
+                // if (vehicle.landing_marker_enabled == false){
+                //     vehicle.landing_marker.addTo(map);
+                //     vehicle.landing_marker_enabled = true;
+                // }
+                if (vehicle.landing_marker.getMap() == null){ // Professional
                     map.addLayer(vehicle.landing_marker);
                 }
             }else{
                 // Balloon has landed, so hide the marker.
                 // Should we do this? Can we re-add it safely?
-                map.removeLayer(vehicle.landing_marker);
+                map.removeLayer(vehicle.landing_marker); // Professional
+                // vehicle.landing_marker.remove(); // Amateur
+                // vehicle.landing_marker_enabled = false; // Amateur
             }
         } else{
             // Landing marker has not been initialised yet.
@@ -1804,7 +1959,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
                 landing_image_src_size = [48,38];
                 landing_image_src_offset = [0,-38];
 
-                latlngs = new L.latLng(position.data.pred_lat, position.data.pred_lon);
+                latlngs = new L.latLng(newPosition.data.pred_lat, newPosition.data.pred_lon);
 
                 landing_icon = new L.icon({
                     iconUrl: landing_image_src,
@@ -1816,10 +1971,11 @@ function updateVehicleInfo(vcallsign, newPosition) {
                     zIndexOffset: Z_CAR,
                     icon: landing_icon,
                     title: vcallsign + " Onboard Landing Prediction",
-                })//.addTo(map);
+                })//.addTo(map); // addTo(Map) was commented out in Professional
 
                 // Add the marker to the vehicle object.
                 vehicle.landing_marker = landing_marker;
+                vehicle.landing_marker_enabled = true; // Amateur
             }
 
         }
@@ -1833,7 +1989,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
   // style="top:80px"
   // if (vehicle["vehicle_type"] == "car") {
   if (elm.length === 0) {
-    if (vehicle.vehicle_type!="car") {
+    if (vehicle.vehicle_type!="car") { // Amateur didn't have vehicle uuid
         $('.portrait').prepend('<div id="pv'+vehicle.uuid+'" class="row vehicle'+vehicle.uuid+'" data-vcallsign="'+vcallsign+'"></div>');
         $('.landscape').prepend('<div id="lv'+vehicle.uuid+'" class="row vehicle'+vehicle.uuid+'" data-vcallsign="'+vcallsign+'"></div>');
     } else {
@@ -1841,23 +1997,22 @@ function updateVehicleInfo(vcallsign, newPosition) {
         $('.landscape').append('<div id="lv'+vehicle.uuid+'" class="row vehicle'+vehicle.uuid+'" data-vcallsign="'+vcallsign+'"></div>');
     }
 
+    // Professional had this if else block here, amateur has it something further along
+    //   } else if(elm.attr('data-vcallsign') === undefined) {
+    //     elm.attr('data-vcallsign', vcallsign);
+    //   }
 
-  } else if(elm.attr('data-vcallsign') === undefined) {
-    elm.attr('data-vcallsign', vcallsign);
-  }
-
-  if (offline.get('opt_selective_sidebar')) {
-    if (document.getElementById("pv"+vehicle.uuid) && document.getElementById("lv"+vehicle.uuid)){
+    if (offline.get('opt_selective_sidebar')) {
         if (map.getBounds().contains(vehicles[vcallsign].marker.getLatLng())) {
-            document.getElementById("pv"+vehicle.uuid).style.display = "block";
-            document.getElementById("lv"+vehicle.uuid).style.display = "block";
+            $("#main .vehicle"+vehicle.uuid).show();
         } else {
-            document.getElementById("pv"+vehicle.uuid).style.display = "none";
-            document.getElementById("lv"+vehicle.uuid).style.display = "none";
+            $("#main .vehicle"+vehicle.uuid).hide();
         }
     }
-}
 
+  } else if(elm.attr('data-vcallsign') === undefined) { // Amateur location. Clearly one of the 2 placements is a bug
+    elm.attr('data-vcallsign', vcallsign);
+  }
 
   // decides how to display the horizonal speed
   var imp = offline.get('opt_imperial'), hrate_text;
@@ -1891,7 +2046,7 @@ function updateVehicleInfo(vcallsign, newPosition) {
   var current_time = convert_time(newPosition.server_time)
 
   for(i in vehicle.receiver_info){
-    if (vehicle.receiver_info[i]["time"] < current_time - 20000) {
+    if (vehicle.receiver_info[i]["time"] < current_time - 20000) { // Amateur had 15000
         delete vehicle.receiver_info[i];
     }
   }
@@ -1916,6 +2071,12 @@ function updateVehicleInfo(vcallsign, newPosition) {
                     vehicle.receiver_info[i].frequency = freq.toFixed(4)
                 }
             }
+            // Amateur Only
+            if(newPosition.callsign[callsign].hasOwnProperty('tone_spacing')){
+                if(newPosition.callsign[callsign].tone_spacing){
+                    vehicle.receiver_info[i].tone_spacing = newPosition.callsign[rxcall].tone_spacing.toFixed(0)
+                }
+            }
             return
         }
       }
@@ -1934,6 +2095,12 @@ function updateVehicleInfo(vcallsign, newPosition) {
         const freq = Number(newPosition.callsign[rxcall].frequency);
         if(!Number.isNaN(freq)){
             temp_receiver.frequency = freq.toFixed(4)
+        }
+    }
+    // Amateur Only
+    if(newPosition.callsign[callsign].hasOwnProperty('tone_spacing')){
+        if(newPosition.callsign[callsign].tone_spacing){
+            temp_receiver.tone_spacing = newPosition.callsign[rxcall].tone_spacing.toFixed(0)
         }
     }
     vehicle.receiver_info[callsign] = temp_receiver;
@@ -1964,6 +2131,11 @@ function updateVehicleInfo(vcallsign, newPosition) {
         if(vehicle.receiver_info[receiver].hasOwnProperty('frequency')){
             tempFields.push(vehicle.receiver_info[receiver].frequency + " MHz");
         }
+        // This makes the metadata line a little long.
+        // We probably need to find somewhere else to show the tone spacing metadata.
+        // if(vehicle.receiver_info[receiver].hasOwnProperty('tone_spacing')){
+        //     tempFields.push(vehicle.receiver_info[receiver].tone_spacing + " Hz");
+        // }
         if(tempFields.length > 0) {
             _new_call += " (" + tempFields.join(", ") + ")";
         }
@@ -1980,7 +2152,8 @@ function updateVehicleInfo(vcallsign, newPosition) {
   }
 
   var timeNow = new Date();
-  var timeSent = convert_time(newPosition.server_time);
+  //   var timeSent = convert_time(newPosition.server_time); Professional. 
+  var timeSent = convert_time(newPosition.gps_time); 
   var timeChosen = null;
 
   if (timeSent > timeNow) {
@@ -1988,6 +2161,8 @@ function updateVehicleInfo(vcallsign, newPosition) {
   } else {
       timeChosen = timeSent;
   }
+
+  // Generate Grafana Link
 
   // Use to-time = now, and enable refresh if the data age is < 30 min old.
   if ((timeNow - timeSent) < (30*60*1000)){
@@ -1998,34 +2173,85 @@ function updateVehicleInfo(vcallsign, newPosition) {
     var grafana_refresh = "";
   }
 
-   // Finally generate the URL to use for the 'Plots' button.
-   var grafana_dashboard_url = grafana_url + "var-Serial=" + vcallsign + "&from=" + vehicle.positions_ts[0] + "&to=" + grafana_to_time + "&orgId=1" + grafana_refresh;
+  var grafana_base_url = grafana_url;
 
+  // Use the default grafana URL, unless the payload is using APRS.
+  if(vehicle.vehicle_type != "car"){
+    if(vehicle.curr_position.data.hasOwnProperty('modulation')){
+        if(vehicle.curr_position.data.modulation.includes('APRS')){
+            grafana_base_url = grafana_aprs_url;
+        }
+
+        if(vehicle.curr_position.data.modulation.includes('WSPR')){
+            grafana_base_url = grafana_wspr_url;
+        }
+
+        if(vehicle.curr_position.data.modulation.includes('Wenet')){
+            grafana_base_url = grafana_wenet_url;
+        }
+    }
+    if(vehicle.curr_position.data.hasOwnProperty('comment')){
+        if(vehicle.curr_position.data.comment.includes('WSPR')){
+            grafana_base_url = grafana_wspr_url;
+        }
+    }
+  }
+
+  // Finally generate the URL to use for the 'Plots' button.
+  // I assume Grafana maps uri parameters based on name. If not, here is the problem!!
+  var grafana_dashboard_url = grafana_base_url + "var-Payload=" + vcallsign + "&var-Serial=" + vcallsign + "&from=" + vehicle.positions_ts[0] + "&to=" + grafana_to_time + "&orgId=1" + grafana_refresh;
+
+  var recovery_url = "https://sondehub.org/found/?serial="
+
+  // Decide if we should enable the 'Float' button.
+  // Enable this based on either a very low ascent rate, or if the payload is using WSPR (in which case it's likely a picoballoon)
+  var float_button_enabled = (newPosition.gps_alt > 3000 && vehicle.ascent_rate < 1 && vehicle.ascent_rate > -1);
+
+  if(vehicle.vehicle_type != "car"){
+    if(vehicle.curr_position.data.hasOwnProperty('modulation')){
+        if(vehicle.curr_position.data.modulation.includes('WSPR')){
+            float_button_enabled = true;
+        }
+    }
+    if(vehicle.curr_position.data.hasOwnProperty('comment')){
+        if(vehicle.curr_position.data.comment.includes('WSPR')){
+            float_button_enabled = true;
+        }
+    }
+  }
 
   //desktop
-  var a    = '<div class="header">' +
-           '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
-           '<canvas class="graph"></canvas>' +
-           '<i class="arrow"></i></div>' +
-           '<div class="data">' +
-           '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+55)+'px">Share</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="skewTdraw(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">SkewT</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') +
-           '<div class="left">' +
-           '<dl>';
+  var a = '<div class="header">' +
+            '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
+            '<canvas class="graph"></canvas>' +
+            '<i class="arrow"></i></div>' +
+            '<div class="data">' +
+            '<div class="buttons">' +
+            '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
+            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + '>Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')">SkewT</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')">Share</span>' : '') + 
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')">Plots</span>' : '') + 
+            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '"">Float</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')"">Found</span>' : '') +
+            '</div>' +
+            '<div class="left">' +
+            '<dl>';
   //mobile
-  var aa    = '<div class="header">' +
-           '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
-           '<canvas class="graph"></canvas>' +
-           '<i class="arrow"></i></div>' +
-           '<div class="data">' +
-           '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:55px">Share</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="skewTdraw(\'' + vcallsign + '\')" style="top:85px">SkewT</span>' : '') +
-           ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
-           '<div class="left">' +
-           '<dl>';
+  var aa = '<div class="header">' +
+            '<span>' + sonde_type + vcallsign + ' <i class="icon-target"></i></span>' +
+            '<canvas class="graph"></canvas>' +
+            '<i class="arrow"></i></div>' +
+            '<div class="data">' +
+            '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
+            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:55px">Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:55px">SkewT</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:85px">Share</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:115px">Plots</span>' : '') + 
+            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:145px">Float</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')" style="top:145px">Found</span>' : '') +
+            '<div class="left">' +
+            '<dl>';
   var b    = '</dl>' +
            '</div>' + // right
            '</div>' + // data
@@ -2054,8 +2280,10 @@ function updateVehicleInfo(vcallsign, newPosition) {
            '<dt>'+formatDate(stringToDateUTC(newPosition.gps_time))+'</dt><dd>datetime (viewer local)</dd>' +
            '<dt>'+coords_text+'</dt><dd>coordinates</dd>' +
            // Enabling use of the larger data store 
-           habitat_data(vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) +
-           //habitat_data(newPosition.data, vehicle.data_fields_age, newPosition.gps_timestamp) +
+           // habitat_data(vehicle.data_fields, vehicle.data_fields_age, newPosition.gps_timestamp) + // Professional Only
+           // habitat_data(newPosition.data) + // Amateur Only
+           // newPosition.data seems to always be the same as vehicle.data_fields, except when it's null, and then vehicle.data_fields is an empty object
+           habitat_data(isProfessional() ? vehicle.data_fields: newPosition.data, vehicle.data_fields_age, newPosition.gps_timestamp) + 
            c + // receivers if any
            '';
 
@@ -2076,235 +2304,187 @@ function updateVehicleInfo(vcallsign, newPosition) {
   // mark vehicles as redrawn
   vehicle.updated = false;
 
+  sidebar_update(); // In Amateur Only. I don't think it's a bad method for Pro to call.
+  
   return true;
 }
 
-function skewTdelete () {
-    var box = $("#skewtbox");
-    
-    skewt.clear();
-    $('#resetSkewt').hide();
-    $('#deleteSkewt').hide();
-    $("#skewtSerial").text("Select a Radiosonde from the list and click 'SkewT' to plot. Note that not all radiosonde types are supported.");
-    box.hide();
-    lhash_update(true);
-    //$('.skewt').hide();
-    $("#skewt-plot").empty();
-    checkSize();
-}
-
-function skewTrefresh () {
-    skewt.clear();
-    $("#skewt-plot").empty();
-    $('#resetSkewt').hide();
-    $('#deleteSkewt').hide();
-
-    skewt = new SkewT('#skewt-plot');
-    
-    try {
-        skewt.plot(skewtdata);
-        $('#resetSkewt').show();
-        $('#deleteSkewt').show();
+// Hysplit stuff is only in Amateur
+function processHysplit(callsign, show) {
+    var vehicle = vehicles[callsign];
+    if (show) {
+        if (Object.keys(vehicle["prediction_hysplit"]).length > 0 && vehicle["prediction_hysplit_age"] == vehicle.curr_position.gps_time) {
+            showHysplit(callsign);
+        } else {
+            generateHysplit(callsign);
+        }
+    } else {
+        hideHysplit(callsign);
     }
-    catch(err) {}
 }
 
-function skewTdraw (callsign) {
-    // Open sidebar
-    var box = $("#skewtbox");
+function showHysplit(callsign) {
+    var vehicle = vehicles[callsign];
+    vehicle.prediction_hysplit_visible = true;
+    for(var prediction in vehicle["prediction_hysplit"]) {
+        map.addLayer(vehicle["prediction_hysplit"][prediction]);
+    }
+    for(var prediction in vehicle["markers_hysplit"]) {
+        for(var pred_hour in vehicle["markers_hysplit"][prediction]){
+            map.addLayer(vehicle["markers_hysplit"][prediction][pred_hour]);
+        }
+    }
+}
 
-    if(box.is(':hidden')) {
-        $('.flatpage, #homebox').hide();
-        $('.skewt').show();
-        box.show().scrollTop(0);
-        lhash_update(true);
-        checkSize();
-    };
+function hideHysplit(callsign) {
+    var vehicle = vehicles[callsign];
+    vehicle.prediction_hysplit_visible = false;
+    for(var prediction in vehicle["prediction_hysplit"]) {
+        map.removeLayer(vehicle["prediction_hysplit"][prediction]);
+    }
+    for(var prediction in vehicle["markers_hysplit"]) {
+        for(var pred_hour in vehicle["markers_hysplit"][prediction]){
+            map.removeLayer(vehicle["markers_hysplit"][prediction][pred_hour]);
+        }
+    }
+}
 
-    // Delete existing
-    try {
-        skewt.clear();
-    } catch (err) {}
+function generateHysplit(callsign) {
+    hideHysplit(callsign)
+    var vehicle = vehicles[callsign];
+    vehicle.prediction_hysplit_visible = true;
+    // If requested, widen the float prediction range.
+    if(offline.get("opt_float_wide")){
+        alt_max = 1000;
+        alt_step = 100;
+    } else {
+        alt_max = 100;
+        alt_step = 20;
+    }
+    alt_min = alt_max*-1;
+    for (var alt = alt_min; alt <= alt_max; alt+=alt_step) {
+        alt_norm = (alt+alt_max)/(alt_max*2.0);
+        //alt_color = ConvertRGBtoHex(evaluate_cmap(alt_norm, 'turbo'));
+        alt_color = ConvertRGBtoHex(evaluate_cmap(alt_norm, 'pride'));
+        createHysplit(callsign, alt, alt_color);
+    }
+}
 
-    $('#resetSkewt').hide();
-    $('#deleteSkewt').hide();
-    $("#skewt-plot").empty();
-    $("#skewtErrors").text("");
-    $("#skewtErrors").hide();
+function createHysplit(callsign, adjustment, alt_color) {
 
-    // Loading gif
-    $("#skewtLoading").show();
-    $("#skewtSerial").show();
-    $("#skewtSerial").text("Serial: " + callsign);
+    var vehicle = vehicles[callsign];
 
-    // Download Data
-    var data_url = "https://api.v2.sondehub.org/sonde/" + encodeURIComponent(callsign);
+    var altitude = Math.round(vehicle.curr_position.gps_alt) + adjustment;
+
+    // Handle any instances where we ended up with a weird time format from the APRS gateway.
+    // This should not be an issue with any other 
+    var vehicleStartTime = vehicle.curr_position.gps_time.replace("+00:00Z","Z");
+
+    var startTime = new Date(Date.parse(vehicleStartTime));
+    //max is 6h back so need to catch if older
+    var nowTime = new Date();
+    var timeDifference = nowTime - startTime;
+    // If last vehicle position is greater than 6 hours old,
+    // Set start time to now - 6 hours.
+    if (timeDifference > 21600000) {
+        nowTime.setHours(nowTime.getHours() - 6);
+        startTime = nowTime;
+    }
+    startTime = startTime.toISOString();
+
+    // Predict up to 84 hours ahead.
+    var endTime = new Date(Date.parse(vehicleStartTime));
+    endTime.setHours(endTime.getHours() + 84);
+    endTime = endTime.toISOString();
+
+    var lon = ((360 + (vehicle.curr_position.gps_lon % 360)) % 360)
+
+    var url = "https://api.v2.sondehub.org/tawhiri?profile=float_profile"
+        + "&launch_latitude=" + vehicle.curr_position.gps_lat
+        + "&launch_longitude=" + lon
+        + "&launch_altitude=" + (altitude-1)
+        + "&launch_datetime=" + startTime
+        + "&ascent_rate=0.1"
+        + "&float_altitude=" + altitude
+        + "&stop_datetime=" + endTime;
+
     $.ajax({
         type: "GET",
-        url: data_url,
+        url: url,
         dataType: "json",
         success: function(data) {
-            processSkewT(data);
-        }
-    });
+            var start = new L.LatLng(vehicle.curr_position.gps_lat, vehicle.curr_position.gps_lon);
+            var path = [start];
 
-    // Credit https://github.com/projecthorus/sondehub-card/blob/main/js/utils.js#L116
-    function processSkewT (data) {
-        burst_idx = -1;
-        max_alt = -99999.0;
-        for (let i = 0; i < data.length; i++){
-            alt = parseFloat(data[i].alt);
-            if (alt > max_alt){
-                max_alt = alt;
-                burst_idx = i;
-            }
-        }
+            start_hours = 0;
+            startDateTime = -1;
+            startDateStr = "";
 
-
-        if(data.length < 50){
-            $("#skewtErrors").text("Insufficient data for Skew-T plot (<50 points).");
-            $("#skewtErrors").show();
-            return;
-        }
-    
-        // Check that we have ascent data
-        if (burst_idx <= 0){
-            $("#skewtErrors").text("Insufficient data for Skew-T plot (Only descent data available).");
-            $("#skewtErrors").show();
-            return;
-        }
-    
-        // Check that the first datapoint is at a reasonable altitude.
-        if (data[0].alt > 15000){
-            $("#skewtErrors").text("Insufficient data for Skew-T plot (Only data > 15km available)");
-            $("#skewtErrors").show();
-            return;
-        }
-
-        v1_data = false;
-        sonde_type = data[data.length-1].type;
-        if(sonde_type == 'payload_telemetry'){
-            // Sondehub v1 data.
-            v1_data = true;
-        }
-
-        var skewt_data = [];
-        decimation = 25;
-        if (v1_data == true){
-            decimation = 1;
-        }
-
-        idx = 1;
-
-        while (idx < burst_idx){
-            entry = data[idx];
-            old_entry = data[idx-1];
-    
-            _old_date = new Date(old_entry.datetime);
-            _new_date = new Date(entry.datetime);
-            _time_delta = (_new_date - _old_date)/1000.0;
-            if (_time_delta <= 0){
-                idx = idx + 1;
-                continue;
-            }
-
-    
-            _temp = null;
-            _dewp = -1000.0;
-            _pressure = null;
-    
-            // Extract temperature datapoint
-            if (entry.hasOwnProperty('temp')){
-                if(parseFloat(entry.temp) > -250.0){
-                    _temp = parseFloat(entry.temp);
-                } else{
-                    idx = idx + 1;
-                    continue;
+            for (let point in data.prediction[1].trajectory) {
+                // Create path for current prediction.
+                if (data.prediction[1].trajectory[point].latitude > 180.0) {
+                    var lat = data.prediction[1].trajectory[point].latitude - 360.0;
+                } else {
+                    var lat = data.prediction[1].trajectory[point].latitude;
                 }
-            }else{
-                // No temp data. Skip to the next point
-                idx = idx + 1;
-                continue;
+                if (data.prediction[1].trajectory[point].longitude > 180.0) {
+                    var lon = data.prediction[1].trajectory[point].longitude - 360.0;
+                } else {
+                    var lon = data.prediction[1].trajectory[point].longitude;
+                }
+                var position = new L.LatLng(lat, lon);
+                path.push(position);
+
+                // Now create a circle marker if we are at a unit of 4 hours after the start time.
+                if(startDateTime === -1){
+                    startDateTime = new Date(Date.parse(data.prediction[1].trajectory[point].datetime));
+                    startDateStr = data.prediction[1].trajectory[point].datetime;
+                }
+
+                current_time = new Date(Date.parse(data.prediction[1].trajectory[point].datetime));
+                current_hours = Math.round((current_time-startDateTime)/3600000);
+                if(current_hours >= (start_hours+4)){
+                    // We are at a unit of 4 hours, make a circle marker with information about the current prediction time.
+                    if(vehicle.markers_hysplit.hasOwnProperty(adjustment) == false){
+                        vehicle.markers_hysplit[adjustment] = {};
+                    }
+
+                    // Calculate the solar elevation at this date and time.
+
+                    var solar_elev_now = (SunCalc.getPosition(current_time, lat, lon, data.prediction[1].trajectory[point].altitude).altitude/rad).toFixed(1);
+
+                    vehicle.markers_hysplit[adjustment][current_hours] = new L.CircleMarker(position, 
+                        {
+                            radius: 6,
+                            fillOpacity: 1,
+                            color: alt_color,
+                        }
+                    ).bindPopup(
+                        "<B>Prediction Start Time:</B> " + startDateStr + "<BR><B>Prediction Start Altitude: </B>" + altitude + "<BR><B>Prediction Current time:</B> " + data.prediction[1].trajectory[point].datetime + " (+" + current_hours + " hrs)<BR><B>Solar Elevation:</B> " + solar_elev_now + "˚"
+                    );
+
+                    if(vehicle.prediction_hysplit_visible){
+                        vehicle.markers_hysplit[adjustment][current_hours].addTo(map);
+                    }
+                        
+                    start_hours = current_hours;
+                }
+
+
             }
-
-    
-            _dewp = null;
-
-            // Try and extract RH datapoint
-            if (entry.hasOwnProperty('humidity')){
-                if(parseFloat(entry.humidity) >= 0.0){
-                    _rh = parseFloat(entry.humidity);
-                    // Calculate the dewpoint
-                    _dewp = (243.04 * (Math.log(_rh / 100) + ((17.625 * _temp) / (243.04 + _temp))) / (17.625 - Math.log(_rh / 100) - ((17.625 * _temp) / (243.04 + _temp))));
-                } 
+            // Add the polyline to the map.
+            vehicle.prediction_hysplit[adjustment] = new L.Wrapped.Polyline(path,
+                {
+                    'color':alt_color,
+                }
+            );
+            vehicle.prediction_hysplit_age = vehicle.curr_position.gps_time;
+            if (vehicle.prediction_hysplit_visible) {
+                vehicle.prediction_hysplit[adjustment].addTo(map);
             }
-    
-            // Calculate movement
-            _old_pos = {'lat': old_entry.lat, 'lon': old_entry.lon, 'alt': old_entry.alt};
-            _new_pos = {'lat': entry.lat, 'lon': entry.lon, 'alt': entry.alt};
-    
-            // Skip over negative altitudes, the skewT library really doesn't like these.
-            if(_new_pos.alt < 10){
-                idx = idx + 1;
-                continue;
-            }
-
-            _pos_info = calculate_lookangles(_old_pos, _new_pos);
-            _wdir = (_pos_info['azimuth']+180.0)%360.0;
-            _wspd = _pos_info['great_circle_distance']/_time_delta;
-    
-            if (entry.hasOwnProperty('pressure')){
-                _pressure = entry.pressure;
-            } else {
-                // Otherwise, calculate it
-                _pressure = getPressure(_new_pos.alt);
-            }
-    
-            if(_pressure < 10.0){
-                break;
-            }
-    
-            _new_skewt_data = {"press": _pressure, "hght": _new_pos.alt, "temp": _temp, "wdir": _wdir, "wspd": _wspd};
-            
-            if (_dewp != null){
-                _new_skewt_data.dwpt = _dewp
-            }
-    
-            skewt_data.push(_new_skewt_data);
-    
-            idx = idx + decimation;
-        }
-
-        skewtdata = skewt_data;
-
-
-        $("#skewtLoading").hide();
-
-        if (skewtdata.length > 0){
-
-            if(box.is(':hidden')) {
-                $('.flatpage, #homebox').hide();
-                $('.skewt').show();
-                box.show().scrollTop(0);
-                lhash_update(true);
-                checkSize();
-            };
-
-            skewt = new SkewT('#skewt-plot');
-    
-            try {
-                skewt.plot(skewtdata);
-                $('#resetSkewt').show();
-                $('#deleteSkewt').show();
-            }
-            catch(err) {}
-    
-        } else {
-            $("#skewtErrors").show();
-            $("#skewtErrors").text("Insufficient Data available, or no Temperature/Humidity data available to generate Skew-T plot.");
-        };
-    }
-};
+        }  
+    });
+}
 
 function set_polyline_visibility(vcallsign, val) {
     var vehicle = vehicles[vcallsign];
@@ -2352,7 +2532,7 @@ function set_polyline_visibility(vcallsign, val) {
         }
     }
 
-    map.removeLayer(mapInfoBox);
+    map.removeLayer(mapInfoBox); // Professional Only
 }
 
 function removePrediction(vcallsign) {
@@ -2371,6 +2551,7 @@ function removePrediction(vcallsign) {
   }
 }
 
+// Professional Only
 function drawLaunchPrediction(vcallsign) {
     var vehicle = vehicles[vcallsign];
 	var data = vehicle.prediction_launch.data;
@@ -2415,15 +2596,15 @@ function drawLaunchPrediction(vcallsign) {
 // See balloon.svg, target.svg, etc for examples
 var svg_cache = {}
 function recolorSVG(svg_path, color) {
-  if (svg_cache[svg_path] == undefined){
+  if (svg_cache[svg_path] == undefined){// SVG Cache Undefined from Pro
     const xhr = new XMLHttpRequest();
     xhr.open('GET', svg_path, false);
     xhr.send();
 
     const parser = new DOMParser();
     const svgDocument = parser.parseFromString(xhr.responseText, 'image/svg+xml');
-    svg_cache[svg_path] = svgDocument;
-  } 
+    svg_cache[svg_path] = svgDocument; // Caching the SVG
+  }
     const svgDoc = svg_cache[svg_path]
     svgDoc.documentElement.style.setProperty("--dynamic-color", color);
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDoc.documentElement.outerHTML);
@@ -2471,12 +2652,12 @@ function redrawPrediction(vcallsign) {
         vehicle.prediction_polyline[0].setLatLngs(line);
         vehicle.prediction_polyline[1].setLatLngs(line);
     } else {
-        vehicle.prediction_polyline = [new L.Polyline(line, {
+        vehicle.prediction_polyline = [new L.Wrapped.Polyline(line, {
             color: balloon_colors[vehicle.color_index],
             opacity: 0.8, // Was 0.4
             weight: 3,
          }),
-         new L.Polyline(line, {
+         new L.Wrapped.Polyline(line, {
             color: "#000",
             opacity: 0.1, // Was 0.4
             weight: 6,
@@ -2488,16 +2669,19 @@ function redrawPrediction(vcallsign) {
         });
         vehicle.prediction_polyline[1].on('click', function (e) {
             mapInfoBox_handle_prediction_path(e);
-        })
+        });
+
+        // Amateur. Not sure if they are needed, so I will comment them out - Vehicle polyline
+        vehicle.prediction_polyline[0].addTo(map);
+        vehicle.prediction_polyline[1].addTo(map);
     }
 
     vehicle.prediction_polyline[0].path_length = path_length;
     vehicle.prediction_polyline[1].path_length = path_length;
 
     var image_src;
-
     var html = "";
-    if(vehicle.prediction_target) {
+    if (vehicle.prediction_target) {
         vehicle.prediction_target.setLatLng(latlng);
     } else {
         image_src = recolorSVG(host_url + markers_url + "target.svg", balloon_colors[vehicle.color_index]);
@@ -2509,32 +2693,33 @@ function redrawPrediction(vcallsign) {
         vehicle.prediction_target = new L.Marker(latlng, {
             zIndexOffset: Z_SHADOW,
             icon: predictionIcon,
-        })//addTo(map);
+        })//.addTo(map); // commented out in professional, so I'll comment it out here
         vehicle.prediction_target.on('click', function (e) {
             mapInfoBox_handle_prediction(e);
         });
     }
     vehicle.prediction_target.pdata = data[data.length-1];
-
-    if(vehicle.prediction.descent_rate == null){
-        vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Float\n";
-    } else {
+    if (vehicle.prediction.descent_rate == null) {
+            vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Float\n";
+    }
+    else {
         if(vehicle.prediction.descending == 1){
             vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n"
-                if (offline.get('opt_imperial')){
-                    vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
-                } else {
-                    vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
-                }
-                
-        } else {
+            if (offline.get('opt_imperial')){
+                vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
+            }
+            else {
+                vehicle.prediction_target.pred_type = vehicle.prediction_target.pred_type + "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
+            }
+        } 
+        else {
             if (offline.get('opt_imperial')){
                 vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + (vehicle.prediction.ascent_rate * 3.2808399).toFixed(1) + " ft/s \n" + 
                     "<b>Burst Altitude:</b> " + (vehicle.prediction.burst_altitude * 3.2808399).toFixed(0) + " ft\n" + 
                     "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
-                
-            } else {
+            }
+            else {
                 vehicle.prediction_target.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + vehicle.prediction.ascent_rate.toFixed(1) + " m/s \n" + 
                     "<b>Burst Altitude:</b> " + vehicle.prediction.burst_altitude.toFixed(0) + " m\n" + 
@@ -2542,9 +2727,8 @@ function redrawPrediction(vcallsign) {
             }
         }
     }
-    
 
-    if(burst_index !== 0 ) {
+    if (burst_index !== 0) {
         if(vehicle.prediction_burst) {
             vehicle.prediction_burst.setLatLng(latlng_burst);
         } else {
@@ -2557,8 +2741,8 @@ function redrawPrediction(vcallsign) {
             vehicle.prediction_burst = new L.Marker(latlng_burst, {
                 zIndexOffset: Z_SHADOW,
                 icon: burstIcon,
-            });
-            vehicle.prediction_burst.pred_type = "<b>Burst</b>\n";
+            });//.addTo(map); // Professional doesn't have addTo(Map);
+            vehicle.prediction_burst.pred_type = "<b>Burst</b>\n"; // Professional Only
             vehicle.prediction_burst.on('click', function (e) {
                 mapInfoBox_handle_prediction(e);
             });
@@ -2569,28 +2753,31 @@ function redrawPrediction(vcallsign) {
         } else {
             if(vehicle.prediction.descending == 1){
                 vehicle.prediction_burst.pred_type = "<b>Prediction Type:</b> Standard \n"
-                if (offline.get('opt_imperial')){
+                if (offline.get('opt_imperial')){ // Amateur didn't have imperial
                     vehicle.prediction_burst.pred_type = vehicle.prediction_burst.pred_type + "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
                 } else {
                     vehicle.prediction_burst.pred_type = vehicle.prediction_burst.pred_type + "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
                 }
             } else {
-                if (offline.get('opt_imperial')){
+                if (offline.get('opt_imperial')){ // Amateur didn't have imperial
                     vehicle.prediction_burst.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + (vehicle.prediction.ascent_rate * 3.2808399).toFixed(1) + " ft/s \n" + 
                     "<b>Burst Altitude:</b> " + (vehicle.prediction.burst_altitude * 3.2808399).toFixed(0) + " ft\n" + 
                     "<b>Descent Rate:</b> " + (vehicle.prediction.descent_rate * 3.2808399).toFixed(1) + " ft/s \n";
                 } else {
-                    vehicle.prediction_burst.pred_type = "<b>Prediction Type:</b> Standard \n" + 
+                vehicle.prediction_burst.pred_type = "<b>Prediction Type:</b> Standard \n" + 
                     "<b>Ascent Rate:</b> " + vehicle.prediction.ascent_rate.toFixed(1) + " m/s \n" + 
                     "<b>Burst Altitude:</b> " + vehicle.prediction.burst_altitude.toFixed(0) + " m\n" + 
                     "<b>Descent Rate:</b> " + vehicle.prediction.descent_rate.toFixed(1) + " m/s \n";
-                    
                 }
             }
         }
     } else {
-        if(vehicle.prediction_burst) vehicle.prediction_burst = null;
+        if(vehicle.prediction_burst) {
+            // Remove burst icon from the map if no burst data in prediction.
+            map.removeLayer(vehicle.prediction_burst); // Professional doesn't have the remove layer
+            vehicle.prediction_burst = null;
+        }
     }
 }
 
@@ -2677,7 +2864,6 @@ function drawAltitudeProfile(c1, c2, series, alt_max, chase) {
             alt = alt_list[i][1];
             alt_time = last_time - alt_list[i][0];
 
-            // 
             //ctx1.lineTo(1+((i+1)*xt1), ch1 - (alt * yt1));
             //ctx2.lineTo(1+((i+1)*xt2), ch2 - (alt * yt2));
             ctx1.lineTo(cw1-(alt_time*xt1), ch1 - (alt * yt1));
@@ -2792,16 +2978,18 @@ function mapInfoBox_handle_path_fetch(id,vehicle) {
         url: url,
         dataType: "json",
         success: function(data) {
-            if (Object.keys(data).length === 0) return mapInfoBox_handle_path_old(vehicle, id); // not in telemetry, fall back to history
+            if (Object.keys(data).length === 0 && isProfessional()) { // Professional Only
+                return mapInfoBox_handle_path_old(vehicle, id); // not in telemetry, fall back to history
+            }
             mapInfoBox_handle_path_new(data, vehicle, date);
         },
-        error: function() {
+        error: function() { // On Error only in Professional
             mapInfoBox_handle_path_old(vehicle, id);
         }     
-    });
+        });
 };
 
-function mapInfoBox_handle_path_old(vehicle, id) {
+function mapInfoBox_handle_path_old(vehicle, id) { // Only in Professional
     var url = "https://api.v2.sondehub.org/sonde/" + vehicle.callsign;
     var index = vehicle["positions_ids"][vehicle["positions_ts"].indexOf(id)].substring(vehicle.callsign.length + 1);
     
@@ -2859,8 +3047,6 @@ function mapInfoBox_handle_path_old(vehicle, id) {
                         html += "<div><span class='old_path_uploader_callsign'></span></div>";
                     };
 
-                    
-
                     div.innerHTML = html;
 
                     div.getElementsByClassName("old_path_serial")[0].textContent = data.serial
@@ -2904,6 +3090,7 @@ function mapInfoBox_handle_path_old(vehicle, id) {
     });
 }
 
+// This is a lot. I need to come back to this later
 function mapInfoBox_handle_path_new(data, vehicle, date) {
     if (Object.keys(data).length === 0) {
         mapInfoBox.setContent("not&nbsp;found");
@@ -2911,37 +3098,45 @@ function mapInfoBox_handle_path_new(data, vehicle, date) {
         return;
     }
 
-    data = data[vehicle.callsign][date];
+    // Amateur stuff
+    formatted = {};
+    formatted[vehicle.callsign] = {};
+    formatted[vehicle.callsign][date] = data[vehicle.callsign][date]
+
+    data = formatData(formatted);
+    data = data.positions.position[0];
 
     div = document.createElement('div');
 
     html = "<div style='line-height:16px;position:relative;'>";
-    html += "<div><span class='new_path_serial'></span> <span style='' class='new_path_time'></span></div>";
+    html += "<div><span class='new_path_serial'>"+data.vehicle+"</span> <span style='' class='new_path_time'>("+date+")</span></div>";
     html += "<hr style='margin:5px 0px'>";
-    html += "<div style='margin-bottom:5px;'><b><i class='icon-location'></i>&nbsp;</b><span class='new_path_coords'></span></div>";
+    html += "<div style='margin-bottom:5px;'><b><i class='icon-location'></i>&nbsp;</b><span class='new_path_coords'>"+format_coordinates(data.gps_lat, data.gps_lon, data.vehicle)+"</span></div>";
 
     var imp = offline.get('opt_imperial');
-    var text_alt = Number((imp) ? Math.floor(3.2808399 * parseInt(data.alt)) : parseInt(data.alt)).toLocaleString("us");
-    text_alt += " " + ((imp) ? 'ft':'m');
+    var text_alt = Number((imp) ? Math.floor(3.2808399 * parseInt(data.gps_alt)) : parseInt(data.gps_alt)).toLocaleString("us"); //data.gps in Professional
+    text_alt += "&nbsp;" + ((imp) ? 'ft':'m');
 
-    html += "<div><b>Altitude: </b><span class='new_path_alt'></span></div>";
-    html += "<div><b>Time: </b><span class='new_path_time_short'></span></div>";
+    html += "<div><b>Altitude:&nbsp;</b><span class='new_path_alt'>"+text_alt+"</span></div>";
+    html += "<div><b>Time:&nbsp;</b><span class='new_path_time_short'><"+formatDate(stringToDateUTC(date))+"</span></div>";
 
     var value = vehicle.path_length;
 
-    html += "<div><b>Distance: </b>";
+    html += "<div><b>Distance:&nbsp;</b>";
 
     if(offline.get('opt_imperial')) {
-        var distance = Math.round(value*0.000621371192) + " mi";
+        html += Math.round(value*0.000621371192) + "&nbsp;mi";
     } else {
-        var distance = Math.round(value/10)/100 + " km";
+        html += Math.round(value/10)/100 + "&nbsp;km";
     }
 
-    html += "<span class='new_path_time_distance'></span></div>";
-    html += "<div><b>Duration: </b><span class='new_path_duration'></span></div>";
+    html += "<span class='new_path_time_distance'></span></div></div>"; // Not in Amateur
 
-    html += "<hr style='margin:5px 0px'><div class='new_path_props'></div>";
+    html += "<div><b>Duration:&nbsp;</b><span class='new_path_duration'></span>" + format_time_friendly(vehicle.start_time, convert_time(vehicle.curr_position.gps_time)) + "</span></div>";
 
+    html += "<hr style='margin:5px 0px'><div class='new_path_props'></div>"; // Professional ONly
+
+    // Professional Method
     function prop(parent, field_name, description, unit="", fixed=undefined){
         if (data.hasOwnProperty(field_name)){
             var div = document.createElement("div")
@@ -2961,7 +3156,7 @@ function mapInfoBox_handle_path_new(data, vehicle, date) {
         return false
     }
     var xdata_fields = document.createElement("div");
-    if (data.hasOwnProperty("xdata")) {
+    if (data.hasOwnProperty("xdata")) { // Professional Only field
         html += "<hr style='margin:0px;margin-top:5px'>";
         html += "<div style='font-size:11px;'>"
         html += "</div><div class='new_path_xdata_prop'></div>";
@@ -3012,44 +3207,36 @@ function mapInfoBox_handle_path_new(data, vehicle, date) {
 
     var callsign_list = [];
 
-    for (var i = 0; i < data.uploaders.length; i++) {
-        _new_call = data.uploaders[i].uploader_callsign;
+    callsigns = isProfessional() ? data.uploaders : data.callsign;
+
+    // Lets hope I did a foreach loop correctly.
+    callsigns.forEach((value, index) => {
+        _new_call = callsign;
         tempFields = [];
-        if(data.uploaders[i].hasOwnProperty('snr')) {
-            tempFields.push(data.uploaders[i].snr.toFixed(0) + " dB");
+        if(value.hasOwnProperty('snr')) {
+            tempFields.push(value.snr.toFixed(0) + " dB");
         } 
-        if(data.uploaders[i].hasOwnProperty('rssi')) {
-            tempFields.push(data.uploaders[i].rssi.toFixed(0) + " dBm");
+        if(value.hasOwnProperty('rssi')) {
+            tempFields.push(value.rssi.toFixed(0) + " dBm");
         }
-        if(data.uploaders[i].hasOwnProperty('frequency')) {
-            tempFields.push(data.uploaders[i].frequency + " MHz");
+        if(data.value.hasOwnProperty('frequency')) {
+            tempFields.push(value.frequency + " MHz");
         }
         if(tempFields.length > 0) {
             _new_call += " (" + tempFields.join(", ") + ")";
         }
         callsign_list.push(_new_call); // catch cases where there are no fields
-    }
+    });
 
     callsign_list = callsign_list.join("\n");
-    callsign_span = document.createElement("span")
+    callsign_span = document.createElement("span");
+
     callsign_span.innerText = callsign_list
 
     div.innerHTML = html;
     div.appendChild(callsign_span)
 
-    div.getElementsByClassName("new_path_serial")[0].textContent = data.serial
-    div.getElementsByClassName("new_path_time")[0].textContent = "("+date+")"
-
-    div.getElementsByClassName("new_path_coords")[0].innerHTML = format_coordinates(data.lat, data.lon, data.serial); // for compat we are generating safeish url in format_coordinates
-
-    div.getElementsByClassName("new_path_alt")[0].textContent = text_alt
-    div.getElementsByClassName("new_path_time_short")[0].textContent = formatDate(stringToDateUTC(date))
-
-
-    div.getElementsByClassName("new_path_time_distance")[0].textContent = distance
-
-    div.getElementsByClassName("new_path_duration")[0].textContent = format_time_friendly(vehicle.start_time, convert_time(vehicle.curr_position.gps_time))
-
+    div.getElementsByClassName("new_path_time_distance")[0].textContent = distance; // Professional 
 
     var prop_parent = div.getElementsByClassName("new_path_props")[0]
     prop(prop_parent,"batt",  "Battery Voltage", "V");
@@ -3064,6 +3251,10 @@ function mapInfoBox_handle_path_new(data, vehicle, date) {
     prop(prop_parent,"pressure",  "Pressure", "Pa", 1);
     prop(prop_parent,"sats",  "Satellites");
     prop(prop_parent,"temp",  "Temperature External", "°C", 1);
+
+    // Amateur
+    prop(prop_parent,"modulation",  "Modulation");
+    prop(prop_parent,"comment",  "Comment");
 
     if (!prop(prop_parent,"subtype",  "Sonde Type")){
         prop(prop_parent,"type",  "Sonde Type")
@@ -3196,6 +3387,7 @@ function addPosition(position) {
         var marker = null;
         var marker_shadow = null;
         var landing_marker = null;
+        var landing_marker_enabled = false; // Amateur Only
         var vehicle_type = "";
         var horizon_circle = null;
         var subhorizon_circle = null;
@@ -3207,7 +3399,7 @@ function addPosition(position) {
         var horizon_circle_title = null;
         var subhorizon_circle_title = null;
         if(vcallsign.search(/(chase)/i) != -1) {
-            if (offline.get("opt_hide_chase") ){
+            if (offline.get("opt_hide_chase") ){ // Professional Only
                 return
             }
             vehicle_type = "car";
@@ -3239,32 +3431,39 @@ function addPosition(position) {
                 _vehicle_id = e.target.options.title;
                 _vehicle_idname = ".vehicle"+vehicles[_vehicle_id].uuid;
                 $(_vehicle_idname).addClass('active');
-                listScroll.refresh();
-                listScroll.scrollToElement(_vehicle_idname, 0);
+                $(_vehicle_idname + ":visible")[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
                 panTo(vcallsign);
                 clearTimeout(periodical_focus_new);
                 refreshSingleNew(_vehicle_id);
             };
 
             polyline = [
-                new L.Polyline(point, {
+                new L.Wrapped.Polyline(point, {
                     color: car_colors[color_index],
                     opacity: 1,
                     weight: 3,
                 })
             ];
-        } else {
+        }
+        else {
             vehicle_type = "balloon";
             let colorHash = 0;
-            for (let i = 0; i < vcallsign.length; i++){
+            for (let i = 0; i < vcallsign.length; i++){ // Professional 
                 colorHash += vcallsign.charCodeAt(i);
             }
-            color_index = colorHash % balloon_colors.length;
 
-            if(wvar.nena){
+            if (wvar.indexColouring) {
+                color_index = balloon_index++ % balloon_colors.length; // Amateur
+            }
+            else if (wvar.nena) {
                 // All the balloon are red.
+                balloon_colors = ["#ff0000"]
                 color_index = 0;
             }
+            else {
+                color_index = colorHash % balloon_colors.length; // Professional
+            }
+
             image_src = recolorSVG(host_url + markers_url + "balloon.svg", balloon_colors[color_index]);
             image_src_size = [46,84];
             image_src_offset = [-35,-46];
@@ -3296,16 +3495,15 @@ function addPosition(position) {
                 icon: balloonIcon,
                 title: tempTitle,
                 zIndexOffset: Z_PAYLOAD,
+                payload: vcallsign
             }).addTo(map).on('click', onClick);
 
             // Scroll list stuff here.
             function onClick(e) {
                 $(".row.active").removeClass('active');
-                _vehicle_id = e.target.options.title.split(' ')[1];
-                _vehicle_idname = ".vehicle"+vehicles[_vehicle_id].uuid;
+                _vehicle_idname = ".vehicle"+vehicles[e.target.options.payload].uuid;
                 $(_vehicle_idname).addClass('active');
-                listScroll.refresh();
-                listScroll.scrollToElement(_vehicle_idname, 0);
+                $(_vehicle_idname + ":visible")[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
                 followVehicle($(_vehicle_idname).attr('data-vcallsign'));
             };
 
@@ -3333,7 +3531,12 @@ function addPosition(position) {
                 } else {
                     map.addLayer(vehicle.marker.shadow);
 
-                    updateHorizonVisibility();
+                    if(!offline.get('opt_hide_horizon') == false){ // Amateur
+                        map.addLayer(vehicle.horizon_circle);
+                        map.addLayer(vehicle.subhorizon_circle);
+                        map.addLayer(vehicle.horizon_circle_title);
+                        map.addLayer(vehicle.subhorizon_circle_title);
+                    }
 
                     if(mode == "parachute") {
                         img_src = recolorSVG(host_url + markers_url + "parachute.svg", this.balloonColor);
@@ -3377,11 +3580,14 @@ function addPosition(position) {
                         title: vcallsign + " Onboard Landing Prediction",
                         zIndexOffset: Z_CAR,
                       }).addTo(map);
+                    landing_marker_enabled = true; // Amateur
                 } else {
                     landing_marker = null;
+                    landing_marker_enabled = false; // Amateur
                 }
             } else {
                 landing_marker = null;
+                landing_marker_enabled = false; // Amateur
             }
 
             horizon_circle = new L.Circle(point, {
@@ -3401,9 +3607,14 @@ function addPosition(position) {
 
             horizon_circle_title = new L.Marker(point, {
                 icon: horizon_circle_title_icon,
-                interactive: true,
-                title: "Line-of-sight (radio) horizon of the payload"
+                interactive: true, // Amateur has false,
+                title: "Line-of-sight (radio) horizon of the payload" // amateur didn't have title
             });
+
+            if (offline.get("opt_hide_horizon")) { // Amateur
+                horizon_circle.addTo(map);
+                horizon_circle_title.addTo(map);
+            }
 
             horizon_circle.on('move', function (e) {
                 try { 
@@ -3429,9 +3640,14 @@ function addPosition(position) {
 
             subhorizon_circle_title = new L.Marker(point, {
                 icon: subhorizon_circle_title_icon,
-                interactive: true,
+                interactive: true, // Amateur has false,
                 title: "Payload is greater than 5 degrees above the horizon within this circle, which indicates it should be fairly easily receivable."
             });
+
+            if (offline.get("opt_hide_horizon")) { // Amateur
+                subhorizon_circle.addTo(map);
+                subhorizon_circle_title.addTo(map);
+            }
 
             subhorizon_circle.on('move', function (e) {
                 try { 
@@ -3440,14 +3656,14 @@ function addPosition(position) {
                 } catch (err) {}
             });  
             
-            polyline_visible = false;
+            polyline_visible = false; // amateur had true;
             polyline = [
-                new L.Polyline(point, {
+                new L.Wrapped.Polyline(point, {
                     color: balloon_colors[color_index],
                     opacity: 1,
                     weight: 3,
-                }),
-                new L.Polyline(point, {
+                }),//.addTo(map), // Amateur had .addTo(map),
+                new L.Wrapped.Polyline(point, {
                     color: "#fff",
                     opacity: 0.6,
                     weight: 6,
@@ -3457,14 +3673,13 @@ function addPosition(position) {
 
         if (!offline.get("opt_hide_titles")) {
             if (vehicle_type == "car") {
-                title = marker.bindTooltip($('<span>').text(vcallsign).html(), {direction: 'center', permanent: 'false', className: 'serialtooltip'});
+                title = marker.bindTooltip($('<span>').text(vcallsign).html(), {direction: 'center', permanent: 'true', className: 'serialtooltip'}); // Amateur had permanent: 'true', and callsign without the wrapper
             } else {
-                title = marker.bindTooltip($('<span>').text(tempTitle).html(), {direction: 'center', permanent: 'false', className: 'serialtooltip'});
+                title = marker.bindTooltip($('<span>').text(tempTitle).html(), {direction: 'center', permanent: 'true', className: 'serialtooltip'}); // Amateur had permanent: 'true', and title without the wrapper
             }
         } else {
             title = null;
         }
-
 
         var vehicle_info = {
                             callsign: vcallsign,
@@ -3474,6 +3689,7 @@ function addPosition(position) {
                             title: title,
                             marker_shadow: marker_shadow,
                             landing_marker: landing_marker,
+                            landing_marker_enabled: landing_marker_enabled, // Amateur
                             image_src: image_src,
                             image_src_size: image_src_size,
                             image_src_offset: image_src_offset,
@@ -3488,12 +3704,12 @@ function addPosition(position) {
                             positions_alts: [],
                             path_length: 0,
                             curr_position: position,
-                            data_fields: {},
-                            data_fields_age: {},
+                            data_fields: {}, // Professional
+                            data_fields_age: {}, // Professional
                             line: [],
                             polyline_visible: polyline_visible,
                             polyline: polyline !== null ? polyline : [
-                                new L.Polyline(point, {
+                                new L.Wrapped.Polyline(point, {
                                     color: "#ffffff",
                                     opacity: 1,
                                     weight: 3,
@@ -3505,10 +3721,14 @@ function addPosition(position) {
                             prediction_burst: null,
                             prediction_launch: null,
                             prediction_launch_polyline: null,
+                            prediction_hysplit: {}, // Amateur
+                            prediction_hysplit_visible: false, // Amateur
+                            prediction_hysplit_age: 0, // Amateur
+                            markers_hysplit: {}, // Amateur
                             ascent_rate: 0.0,
                             horizontal_rate: 0.0,
                             max_alt: parseFloat(position.gps_alt),
-                            max_alt_time: convert_time(position.gps_time),
+                            max_alt_time: convert_time(position.gps_time), // Professional
                             follow: false,
                             color_index: color_index,
                             graph_data_updated: false,
@@ -3517,7 +3737,7 @@ function addPosition(position) {
                             graph_yaxes: [],
                             updated: false,
                             start_time: 2147483647000,
-                            receiver_info: {}
+                            receiver_info: {} // amateur had it as an array. I assume an error
                             };
                     
         // deep copy yaxes config for graph
@@ -3549,7 +3769,7 @@ function addPosition(position) {
             vehicle_info.polyline = [];
 
             for(k in rainbow) {
-                vehicle_info.polyline.push(new L.Polyline(point, {
+                vehicle_info.polyline.push(new L.Wrapped.Polyline(point, {
                     zIndexOffset: (Z_PATH - (k * 1)),
                     color: rainbow[k],
                     opacity: 1,
@@ -3564,25 +3784,41 @@ function addPosition(position) {
             potentialobjects = [marker, marker_shadow, landing_marker, horizon_circle, horizon_circle_title, subhorizon_circle, subhorizon_circle_title, polyline];
             if (vehicle_info["prediction_polyline"] && map.hasLayer(vehicle_info["prediction_polyline"][0])) { 
                 map.removeLayer(vehicle_info["prediction_polyline"][0]);
+            }
+            if (vehicle_info["prediction_polyline"] && map.hasLayer(vehicle_info["prediction_polyline"][1])) {
                 map.removeLayer(vehicle_info["prediction_polyline"][1]);
             }
             if (vehicle_info["prediction_launch_polyline"] && map.hasLayer(vehicle_info["prediction_launch_polyline"][0])) { 
                 map.removeLayer(vehicle_info["prediction_launch_polyline"][0]);
                 map.removeLayer(vehicle_info["prediction_launch_polyline"][1]);
             }
-            if (map.hasLayer(vehicle_info["prediction_target"])) { 
+            if (vehicle_info["prediction_target"] && map.hasLayer(vehicle_info["prediction_target"])) {
                 map.removeLayer(vehicle_info["prediction_target"]);
             }
-            if (map.hasLayer(vehicle_info["prediction_burst"])) { 
+            if (vehicle_info["prediction_burst"] && map.hasLayer(vehicle_info["prediction_burst"])) { 
                 map.removeLayer(vehicle_info["prediction_burst"]);
+            }
+            for(var prediction in vehicle_info["prediction_hysplit"]) { // Amateur
+                if (prediction){
+                    map.removeLayer(vehicle_info["prediction_hysplit"][prediction]);
+                }
+            }
+            for(var prediction in vehicle_info["markers_hysplit"]) { // Amateur
+                for(var pred_hour in vehicle_info["markers_hysplit"][prediction]){
+                    if (pred_hour){
+                        map.removeLayer(vehicle_info["markers_hysplit"][prediction][pred_hour]);
+                    }
+                }
             }
             try {
                 for(var p in vehicle_info.polyline) {
-                    map.removeLayer(vehicle_info.polyline[p]);
+                    if (vehicle_info.polyline){
+                        map.removeLayer(vehicle_info.polyline[p]);
+                    }
                 }
             } catch (e) {};
             for (let i = 0; i < potentialobjects.length; i++) {
-                if (map.hasLayer(potentialobjects[i])) { 
+                if (potentialobjects[i] && map.hasLayer(potentialobjects[i])) { 
                     map.removeLayer(potentialobjects[i]);
                 }
               }
@@ -3598,14 +3834,14 @@ function addPosition(position) {
         }
         
         vehicles[vcallsign] = vehicle_info;    
-        updateHorizonVisibility();
+        updateHorizonVisibility(); // Professional
     }
 
     var vehicle = vehicles[vcallsign];
 
     var new_latlng = new L.LatLng(position.gps_lat, position.gps_lon);
     var new_ts = convert_time(position.gps_time);
-    position.gps_timestamp = new_ts;
+    position.gps_timestamp = new_ts; // Professional
     var curr_ts = convert_time(vehicle.curr_position.gps_time);
     var new_alt = position.gps_alt;
     var dt = (new_ts - curr_ts) / 1000; // convert to seconds
@@ -3617,7 +3853,7 @@ function addPosition(position) {
     }
     
     if(dt >= 0) {
-        if(vehicle.num_positions > 0) {
+        if(vehicle.num_positions > 0) { // Professional Code
 
             //average over 5s if available
             var old_ts = vehicle.positions_ts[vehicle.positions_ts.length - 5];
@@ -3652,7 +3888,74 @@ function addPosition(position) {
                     vehicle.horizontal_rate = horizontal_rate_temp;
                 }
             }
-         }
+        }
+        if(1 == 2 && vehicle.num_positions > 0 && dt > 0) { // Amateur code (I'm deliberately disabling it with 1 == 2). I don't think I need to use it, but I'll keep it here if that needs to be fixed
+
+        // This commenteed block is an attempt at having the ascent rate and speed
+        // calculations be run over a wider time range than just the last position.
+        //     var search_ts = new_ts - 10000
+
+        //     function searchPositions(times) {
+        //         for (i = times.length; i >= 0; i--) {
+        //             if (times[i] <= search_ts) {
+        //                 return times[i]
+        //             }
+        //         }
+        //         return null
+        //     }
+            
+        //     var search_match = searchPositions(vehicle.positions_ts)
+        //     var search_index = vehicle.positions_ts.indexOf(search_match)
+
+        //     if (search_match != null && search_match >= search_ts - 5000) {
+        //         var dtt = (curr_ts - search_match) / 1000;
+
+        //         //console.log("Search: Old: " + search_match + ", " + vehicle.positions_alts[search_index] + " New: " + curr_ts + ", " + position.gps_alt);
+                
+        //         // calculate vertical rate
+        //         if(position.data.hasOwnProperty('ascent_rate')){
+        //             // Use provided ascent rate if available.
+        //             var rate = position.data.ascent_rate;
+        //         } else {
+        //             var rate = (position.gps_alt - vehicle.positions_alts[search_index]) / dtt;
+        //         }
+        //         if (!isNaN(rate) && isFinite(rate)) {
+        //             vehicle.ascent_rate = 0.2 * rate + 0.8 * vehicle.ascent_rate;
+        //         }
+        //
+        //         //console.log("Search OK - DTT: " + dtt + " Instant Rate: " + rate + " Average Rate: " + vehicle.ascent_rate);
+        //
+        //         // calculate horizontal rate
+        //         horizontal_rate_temp = new_latlng.distanceTo(vehicle.positions[search_index]) / dtt;
+        //         if (!isNaN(horizontal_rate_temp) && isFinite(horizontal_rate_temp)) {
+        //             vehicle.horizontal_rate = horizontal_rate_temp;
+        //         }
+        //     } 
+        //     else {
+        //         This section is the 'original' method of calculating the ascent and horizontal rates.
+        //         It works only on the last and current position.
+        //         The ascent rate is filtered.
+
+        //         This commented block allows use of payload-supplied ascent rate data.
+        //         This might be worth using.
+        //
+        //         if(position.data.hasOwnProperty('ascent_rate')){
+        //              var rate = position.data.ascent_rate;
+        //          } else {
+            var rate = (position.gps_alt - vehicle.curr_position.gps_alt) / dt;
+        //          }
+                
+            if (!isNaN(rate) && isFinite(rate)) {
+                vehicle.ascent_rate = 0.2 * rate + 0.8 * vehicle.ascent_rate;
+            }
+
+            // calculate horizontal rate
+            horizontal_rate_temp = new_latlng.distanceTo(new L.LatLng(vehicle.curr_position.gps_lat, vehicle.curr_position.gps_lon)) / dt;
+            if (!isNaN(horizontal_rate_temp) && isFinite(horizontal_rate_temp)) {
+                vehicle.horizontal_rate = horizontal_rate_temp;
+            }
+        //}
+        }
 
         // add the new position
         if(wvar.mode == "Position") {
@@ -3762,7 +4065,7 @@ function addPosition(position) {
     // record the highest altitude
     if(parseFloat(position.gps_alt) > vehicle.max_alt) {
         vehicle.max_alt = parseFloat(position.gps_alt);
-        vehicle.max_alt_time = new_ts;
+        vehicle.max_alt_time = new_ts; // Professional
     }
 
     return;
@@ -4022,6 +4325,7 @@ var ajax_positions_single_new = null;
 var ajax_inprogress = false;
 var ajax_inprogress_single = false;
 var ajax_inprogress_single_new = false;
+var ajax_positions_first_update_complete = false; // Amateur
 
 function refresh() {
   if(ajax_inprogress) {
@@ -4037,10 +4341,16 @@ function refresh() {
   var mode = wvar.mode.toLowerCase();
   mode = (mode == "position") ? "latest" : mode.replace(/ /g,"");
 
-  if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
-    var data_str = "duration=3d&serial=" + encodeURIComponent(wvar.query);
+  if (wvar.query) {
+    var data_str = "duration=" + mode + "&payload_callsign=" + encodeURIComponent(wvar.query); // Amateur
+   
+    if (isProfessional() && sondePrefix.indexOf(wvar.query) == -1) { // Professional
+        var data_str = "duration=3d&serial=" + encodeURIComponent(wvar.query);
+    }
+    setLongTimePeriods(true); // Amateur - But I've disabled that functionality on Professional
   } else {
     var data_str = "duration=" + mode;
+    setLongTimePeriods(false); // Amateur - But I've disabled that functionality on Professional
   }
 
   ajax_positions = $.ajax({
@@ -4049,34 +4359,135 @@ function refresh() {
     data: data_str,
     dataType: "json",
     success: function(data, textStatus) {
-      var checkLoadedTimer = setInterval(() => {
+        var checkLoadedTimer = setInterval(() => {
         if (map){
-          if (wvar.query != null && JSON.stringify(data).indexOf(wvar.query) == -1) {
-              refreshSingle(wvar.query);
-          } else {
-              response = formatData(data, false);
-              update(response, true);   
-              $("#stTimer").attr("data-timestamp", response.fetch_timestamp);
-          }
-          $("#stText").text("");
-          clearInterval(checkLoadedTimer)
+            // Amateur had the if statement comment out, so it's only the else return
+            // This check breaks multiple payload queries.
+            // Is this correct anyway? refreshSingle uses the /sonde/ API which is for radiosondes only?
+            if (isProfessional() && wvar.query != null && JSON.stringify(data).indexOf(wvar.query) == -1) {
+                refreshSingle(wvar.query);
+            } else {
+                response = formatData(data, false); // Amateur doesn't have 2nd parameter
+                update(response, true);   
+            }
+            clearInterval(checkLoadedTimer)
         }
       }, 50)
     },
     error: function() {
         $("#stText").text("poll error |");
+        document.getElementById("timeperiod").disabled = false; // Amateur Only
         ajax_inprogress = false;
     },
     complete: function(request, textStatus) {
-
+        if (!ajax_inprogress_single) { // Amateur Only
+            document.getElementById("timeperiod").disabled = false;
+        }
         clientActive = true;
         //console.log("WebSockets - Resuming Websockets updates after poll.")
         clearTimeout(periodical);
         ajax_inprogress = false;
+
+        // refresh predictions has to run after positions otherwise the data won't update correctly - but we only want to run it once because websockets
+        if (ajax_positions_first_update_complete == false) { // Amateur Only 
+            refreshPredictions();
+            ajax_positions_first_update_complete = true;
+        } 
+
+        if(wvar.query){ // Amateur Only 
+            // If we have a query, pan the map to cover the payloads in that query.
+            var vehicle_query = wvar.query.replace(/;/g,',').split(',');
+            var query_positions = [];
+            for (k in vehicle_query){
+                veh = vehicle_query[k];
+                if(vehicles.hasOwnProperty(veh)){
+                    query_positions.push(vehicles[veh].positions[vehicles[veh].positions.length-1]);
+                }
+            }
+            if (query_positions.length > 0) {
+                map.fitBounds(query_positions, {'maxZoom': 8});
+            }
+        }
+
     }
   });
 }
 
+function refreshSingle(serial) { // Amateur Only 
+    if(ajax_inprogress_single) {
+        clearTimeout(periodical_focus);
+        periodical_focus = setTimeout(refreshSingle, 2000, serial);
+        return;
+    }
+  
+    ajax_inprogress_single = true;
+
+    $("#stText").text("loading |");
+  
+    var data_url = "https://api.v2.sondehub.org/sonde/" + encodeURIComponent(serial);
+  
+    ajax_positions_single = $.ajax({
+      type: "GET",
+      url: data_url,
+      dataType: "json",
+      success: function(data, textStatus) {
+        response = formatData(data);
+        update(response, true);
+        $("#stText").text("");
+      },
+      error: function() {
+        $("#stText").text("error |");
+        ajax_inprogress_single = false;
+        document.getElementById("timeperiod").disabled = false;
+      },
+      complete: function(request, textStatus) {
+          clearTimeout(periodical_focus);
+          ajax_inprogress_single = false;
+          document.getElementById("timeperiod").disabled = false;
+      }
+    });
+}
+
+function refreshSingleNew(serial) {
+    if(ajax_inprogress_single_new) {
+        clearTimeout(periodical_focus_new);
+        periodical_focus_new = setTimeout(refreshSingle, 2000, serial);
+        return;
+    }
+
+    if (serial.includes("_chase")) {
+        if (!offline.get("opt_hide_chase")) {
+            refreshNewReceivers(false, serial.replace("_chase", ""));
+        }
+        return;
+    }
+  
+    ajax_inprogress_single_new = true;
+
+    // Only request backlog data from the current time period.
+    var mode = wvar.mode.toLowerCase();
+    mode = (mode == "position") ? "latest" : mode.replace(/ /g,"");
+    var data_str = "duration=" + mode + "&payload_callsign=" + serial;
+
+
+    ajax_positions_single_new = $.ajax({
+      type: "GET",
+      url: newdata_url,
+      data: data_str,
+      dataType: "json",
+      success: function(data, textStatus) {
+        response = formatData(data);
+        update(response, true);
+      },
+      error: function() {
+        ajax_inprogress_single_new = false;
+      },
+      complete: function(request, textStatus) {
+          clearTimeout(periodical_focus_new);
+          ajax_inprogress_single_new = false;
+      }
+    });
+}
 
 live_data_buffer = {positions:{position:[]}}
 function liveData() {
@@ -4084,25 +4495,43 @@ function liveData() {
     client.onMessageArrived = onMessageArrived;
 
     client.connect({onSuccess:onConnect,onFailure:connectionError,reconnect:true});
-
+    
     function onConnect() {
-        if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
-            var topic = "sondes/" + wvar.query;
-            client.subscribe(topic);
-            client.subscribe("prediction/"+wvar.query);
-            client.subscribe("reverse-prediction/"+wvar.query);
-            clientTopic = [topic];
-        } else {
-            client.subscribe("sondes-new/#");
-            clientTopic = ["sondes-new/#"];
-        }
+        try {
+            var topicPrefix =  "amateur/";
+
+            if (wvar.query && sondePrefix.indexOf(wvar.query) == -1) {
+                if (isProfessional()) {
+                    topicPrefix = "sondes/"
+                    client.subscribe("prediction/"+wvar.query);
+                    client.subscribe("reverse-prediction/"+wvar.query);
+                }
+                var topic = wvar.query.split(",").map(function(el) { 
+                    return topicPrefix + el; 
+                });
+                client.subscribe(topic);
+                clientTopic = topic;
+            } else {
+                if (isProfessional()) {
+                    topicPrefix = "sondes-new/"
+                }
+                client.subscribe(topicPrefix + "#");
+                clientTopic = [topicPrefix + "#"];
+            }
+        } catch (err) {}
         // Also subscribe to listener data, for listener and chase-car telemetry.
         // To revert listener-via-websockets change, comment out this line,
         // and un-comment the 'Disable periodical listener refresh' lines further below.
-        client.subscribe("listener/#");
+        if (isAmateur()) {
+            client.subscribe("amateur-listener/#");
+            client.subscribe("amateur-prediction/#");
+        }
+        else if (isProfessional()) {
+            client.subscribe("listener/#");
 
-        // .. and to the recoveries
-        client.subscribe("recovery/#");
+            // .. and to the recoveries
+            client.subscribe("recovery/#");
+        }
 
         clientConnected = true;
         $("#stText").text("websocket |");
@@ -4140,18 +4569,15 @@ function liveData() {
             document.getElementById("stTimer").classList.remove('friendly-dtime');
         }
         var tracking_sondes = clientTopic.length;
-        if (clientTopic[0] = "sondes-new/#"){ // need to subtract one if we are subbed to the slow feed
+        if (clientTopic[0] = "sondes-new/#"){ // need to subtract one if we are subbed to the slow feed // Only in Professional
             tracking_sondes = tracking_sondes - 1;
         }
 
-        
-        
         $("#stTimer").text(Math.round(messageRate/10) + " msg/s " + tracking_sondes + " sondes");
         $("#updatedText").text(" ");
-        var dateNow = new Date().getTime();
         try {
             if (clientActive) {
-                if(message.topic.startsWith("listener")){
+                if(message.topic.startsWith("amateur-listener") || message.topic.startsWith("listener")){
                     // Message is Listener / Chase-Car information
                     var frame = JSON.parse(message.payloadString.toString());
                     // We need to convert this into the right format for feeding into the receiver / chase car update functions.
@@ -4174,12 +4600,12 @@ function liveData() {
                     } else {
                         updateReceivers(formatted_frame, single=true);
                     }
-                } else if (message.topic.startsWith("prediction")) {
+                } else if (message.topic.startsWith("amateur-prediction") || message.topic.startsWith("prediction")) {
                     var frame = JSON.parse(message.payloadString.toString());
 
                     var pred_data = [
                         {
-                            "vehicle": frame.serial,
+                            "vehicle": isProfessional()? frame.serial : frame.payload_callsign,
                             "time": frame.datetime,
                             "latitude": frame.position[1],
                             "longitude": frame.position[0],
@@ -4193,14 +4619,14 @@ function liveData() {
                         }
                     ]
                     updatePredictions(pred_data);
-                } else if (message.topic.startsWith("reverse-prediction")) {
+                } else if (message.topic.startsWith("reverse-prediction")) { // Professional Only
                     var frame = JSON.parse(message.payloadString.toString());
                     var serial = frame["serial"];
                     var pred_data = {
                     }
                     pred_data[serial] = frame
                     updateLaunchPredictions(pred_data);
-                } else if (message.topic.startsWith("recovery")) {
+                } else if (message.topic.startsWith("recovery")) {// Professional Only
                     // Recovery reports get initialised on page load.
                     // After this, we get recovery report updates via websockets.
                     // Single recovery report via websockets
@@ -4212,14 +4638,16 @@ function liveData() {
                     }
 
                 } else {
-                    var frame = JSON.parse(message.payloadString.toString());
+                    // Message is payload telemetry
 
+                    // If we switch to amateur-batch, we should use
+                    var frame = JSON.parse(message.payloadString.toString()); // commented out in amateur, I'll go with it and see if anything dies.
+
+                    // If statement only in Professional, contents in both.
                     if (wvar.query == "" || sondePrefix.indexOf(wvar.query) > -1 || wvar.query == frame.serial) {
-
-                        var test = formatData(frame, true);
+                        var test = formatData(frame, true); // Amateur didn't have 2nd parameter
                         if (clientActive) {
                             live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,test.positions.position)
-                            $("#stTimer").attr("data-timestamp", dateNow);
                             $("#stText").text("websocket |");
                         }
                     }
@@ -4232,20 +4660,18 @@ function liveData() {
     };
 }
 
-
-// Interval to read in the live data buffer and update the page.
 setInterval(function(){
-    if(map){
-      update(live_data_buffer);
+    if (map) { 
+        update(live_data_buffer);
     }
-    
+
     live_data_buffer.positions.position=[];
 }, 500)
 
 // Event listener to update on page resume from suspend.
 document.addEventListener('resume', refresh);
 
-function refreshSingle(serial) {
+function refreshSingle(serial) { // Only in Professional
     if(ajax_inprogress_single) {
         clearTimeout(periodical_focus);
         periodical_focus = setTimeout(refreshSingle, 2000, serial);
@@ -4284,7 +4710,7 @@ function refreshSingle(serial) {
     });
 }
 
-function refreshSingleNew(serial) {
+function refreshSingleNew(serial) { // Only in Professional
     if(ajax_inprogress_single_new) {
         clearTimeout(periodical_focus_new);
         periodical_focus_new = setTimeout(refreshSingle, 2000, serial);
@@ -4299,8 +4725,12 @@ function refreshSingleNew(serial) {
     }
   
     ajax_inprogress_single_new = true;
-  
-    var data_str = "duration=3d&serial=" + serial;
+    
+    if (isProfessional()) {
+        var data_str = "duration=3d&serial=" + serial;
+    } else {
+        var data_str = "duration=3d&payload_callsign=" + serial;
+    }
 
     var xhr = new XMLHttpRequest();
 
@@ -4323,19 +4753,21 @@ function refreshSingleNew(serial) {
           clearTimeout(periodical_focus_new);
           ajax_inprogress_single_new = false;
           // check if we have been redirected for history - if not we can also fetch that if it exists
-          if (xhr.responseURL.includes(newdata_url)){
-            $.ajax({
-                type: "GET",
-                url: "https://sondehub-history.s3.amazonaws.com/serial/"+ encodeURIComponent(serial) +".json.gz",
-                dataType: "json",
-                success: function(data, textStatus) {
-                  response = formatData(data, false);
-                  update(response, true);
-                },
-                error: function() {
-                }
-            })
-          }
+          if (isProfessional()) {
+            if (xhr.responseURL.includes(newdata_url)){
+                $.ajax({
+                    type: "GET",
+                    url: "https://history.sondehub.org/serial/"+ encodeURIComponent(serial) +".json.gz",
+                    dataType: "json",
+                    success: function(data, textStatus) {
+                    response = formatData(data, false);
+                    update(response, true);
+                    },
+                    error: function() {
+                    }
+                })
+            }
+        }
       }
     });
 }
@@ -4375,11 +4807,11 @@ function refreshReceivers() {
             data: data_str,
             dataType: "json",
             success: function(response, textStatus) {
-              var checkLoadedTimer = setInterval(() => {
-                if (map){
-                  updateReceivers(response, single=false);
-                  clearInterval(checkLoadedTimer);
-                }
+                var checkLoadedTimer = setInterval(() => { // wait until map is ready to set
+                    if (map){
+                        updateReceivers(response, single=false);
+                        clearInterval(checkLoadedTimer);
+                    }
               }, 50);
             },
             complete: function(request, textStatus) {
@@ -4413,17 +4845,14 @@ function refreshNewReceivers(initial, serial) {
             if (!offline.get("opt_hide_chase")) {
                 updateChase(response);
             }
-        },
-        complete: function(request, textStatus) {
-            if (typeof serial === 'undefined') {
-                // Disable periodical listener refresh - this data now comes via websockets.
-                //periodical_listeners = setTimeout(function() {refreshNewReceivers(false)}, 30 * 1000);
-            }
         }
     });
 }
 
-function singleRecovery(serial) {
+function singleRecovery(serial) { // Only in Professional
+    if (!isProfessional()){
+        return;
+    }
 
     var datastr = "serial=" + serial;
 
@@ -4441,8 +4870,7 @@ function singleRecovery(serial) {
 
 }
 
-function refreshRecoveries() {
-
+function refreshRecoveries() { // Only in Professional
     $.ajax({
         type: "GET",
         url: recovered_sondes_url,
@@ -4450,7 +4878,6 @@ function refreshRecoveries() {
         success: function(response, textStatus) {
           var checkLoadedTimer = setInterval(() => {
             if (map){
-              updateRecoveryPane(response);
               if(!offline.get('opt_hide_recoveries')) {
                   updateRecoveries(response);
               }
@@ -4459,50 +4886,47 @@ function refreshRecoveries() {
           }, 50);
         },
         error: function() {
-            updateRecoveryPane([]);
         }
     });
-
-}
-
-function refreshRecoveryStats() {
-
-    $.ajax({
-        type: "GET",
-        url: recovered_sondes_stats_url,
-        dataType: "json",
-        success: function(response, textStatus) {
-            updateLeaderboardPane(response);
-        },
-        error: function() {
-            updateLeaderboardPane([]);
-        }
-    });
-
 }
 
 var ajax_predictions = null;
 
+function refreshPredictions() { // Only in Amateur 
+    if (!isAmateur()){
+        return;
+    }
 
-var periodical, periodical_focus, periodical_focus_new, periodical_receivers, periodical_listeners, periodical_recoveries;
-var periodical_predictions = null;
-var timer_seconds = 5;
+    ajax_predictions = $.ajax({
+        type: "GET",
+        url: predictions_url + encodeURIComponent(wvar.query),
+        data: "",
+        dataType: "json",
+        success: function(response, textStatus) {
+            updatePredictions(response);
+        },
+        error: function() {
+        },
+        complete: function(request, textStatus) {
+        }
+    });
+}
 
+var periodical, periodical_focus, periodical_focus_new;
+
+// This used refresh ajax endpoints regularly, however we've been using websockets
+// so this only acts as a bit of a hold down timer to prevent lots of requests
+// if for example a user clicks on a bunch of stuff or scrolls the time picker
 function startAjax() {
-
     // prevent insane clicks to start numerous requests
-    clearTimeout(periodical);
-    clearTimeout(periodical_focus);
-    clearTimeout(periodical_focus_new);
-    clearTimeout(periodical_receivers);
-    clearTimeout(periodical_predictions);
+    stopAjax();
 
-    //periodical = setInterval(refresh, timer_seconds * 1000);
     refresh();
 
     refreshPatreons();
-    refreshRecoveries();
-    refreshRecoveryStats();
+    if (isProfessional()){
+        refreshRecoveries(); // Only in Professional
+    }
 }
 
 function stopAjax() {
@@ -4521,9 +4945,7 @@ function stopAjax() {
     periodical_focus_new = null;
     ajax_inprogress_single_new = false;
     if(ajax_positions_single_new) ajax_positions_single_new.abort();
-
-    clearTimeout(periodical_predictions);
-    periodical_predictions = null;
+    
     if(ajax_predictions) ajax_predictions.abort();
 }
 
@@ -4547,16 +4969,15 @@ function updateCurrentPosition(lat, lon) {
     } else {
       currentPosition.lat = lat;
       currentPosition.lon = lon;
-      if (!CHASE_enabled){
-        currentPosition.marker.addTo(map);
-        currentPosition.marker.setLatLng(latlng);
-      }
+        if (!CHASE_enabled){ // If Chase check only in Professional
+            currentPosition.marker.addTo(map);
+            currentPosition.marker.setLatLng(latlng);
+        }
     }
 }
 
 function updateReceiverMarker(receiver) {
   var latlng = new L.LatLng(receiver.lat, receiver.lon);
-
 
   // init a marker if the receiver doesn't already have one
   if(!receiver.marker) {
@@ -4564,21 +4985,24 @@ function updateReceiverMarker(receiver) {
     if (pledges.hasOwnProperty(receiver.name)) {
         if (pledges[receiver.name].icon == "bronze") {
             receiver.marker = new L.CircleMarker(latlng, {
-                radius: Math.min(map.getZoom(),6*1.3),
+                radius: Math.min(map.getZoom(),6*1.3), // Professional
+                //radius: 8, // Amateur
                 fillOpacity: 0.6,
                 color: "#CD7F32",
             });
             receiver.infobox = new L.popup({ autoClose: false, closeOnClick: false, className: "bronze" }).setContent(receiver.description);
         } else if (pledges[receiver.name].icon == "silver") {
             receiver.marker = new L.CircleMarker(latlng, {
-                radius: Math.min(map.getZoom(),6*1.3),
+                radius: Math.min(map.getZoom(),6*1.3), // Professional
+                //radius: 8, // Amateur
                 fillOpacity: 0.6,
                 color: "#C0C0C0",
             });
             receiver.infobox = new L.popup({ autoClose: false, closeOnClick: false, className: "silver" }).setContent(receiver.description);
         } else {
             receiver.marker = new L.CircleMarker(latlng, {
-                radius: Math.min(map.getZoom(),6*1.3),
+                radius: Math.min(map.getZoom(),6*1.3), // Professional
+                //radius: 8, // Amateur
                 fillOpacity: 0.6,
                 color: "#FFD700",
             });
@@ -4586,7 +5010,8 @@ function updateReceiverMarker(receiver) {
         };
     } else {
         receiver.marker = new L.CircleMarker(latlng, {
-            radius: Math.min(map.getZoom(),6),
+            radius: Math.min(map.getZoom(),6), // Professional
+            // radius: 6, // Amateur
             fillOpacity: 0.6,
             color: "#008000",
         });
@@ -4594,10 +5019,10 @@ function updateReceiverMarker(receiver) {
     }
     
     receiver.marker.bindPopup(receiver.infobox);
-    if (!offline.get("opt_hide_receivers") ){
+    if (!offline.get("opt_hide_receivers") ){ // Hide Receiver check only in Professional
         receiverCanvas.addLayer(receiver.marker);
     }
-   
+
   } else {
     receiver.marker.setLatLng(latlng);
     receiver.infobox = new L.popup({ autoClose: false, closeOnClick: false }).setContent(receiver.description);
@@ -4651,14 +5076,12 @@ function updateChase(r) {
         }
     }
     response.positions.position = dataTemp;
-    response.fetch_timestamp = Date.now();
     if (response.positions.position.length > 0) {
-        live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,response.positions.position)
+        live_data_buffer.positions.position.push.apply(live_data_buffer.positions.position,response.positions.position);
     }
 }
 
-function showRecoveredMap(serial) {
-
+function showRecoveredMap(serial) { // Professional Only
     $("header .search input[type='text']").val(serial);
 
     wvar.query = serial;
@@ -4784,11 +5207,12 @@ function updateReceivers(r, single) {
             }
         }
     }
-
-    if(follow_vehicle !== null) drawLOSPaths(follow_vehicle);
+    if(follow_vehicle !== null){
+        drawLOSPaths(follow_vehicle);
+    }
 }
 
-function updateRecoveryMarker(recovery) {
+function updateRecoveryMarker(recovery) { // Only in Professional
     var latlng = new L.LatLng(recovery.lat, recovery.lon);
   
 
@@ -4863,13 +5287,10 @@ function updateRecoveryMarker(recovery) {
 
     recovery.infobox.setContent(div);
   }
-  
-  function updateRecoveries(r, single=false) {
+
+function updateRecoveries(r, single=false) { // Only in Professional
       if(!r) return;
       ls_recoveries = true;
-
-      var dateNow = Date.now();
-        
   
       var i = 0, ii = r.length;
       for(; i < ii; i++) {
@@ -4920,105 +5341,9 @@ function updateRecoveryMarker(recovery) {
               recovery_names.splice(i,1);
           }
       }
-  
-  }
-
-function updateRecoveryPane(r){
-    if(!r) return;
-    ls_recoveries = true;
-
-    html = "";
-
-    var dateNow = Date.now();
-
-    var i = 0, ii = r.length;
-    for(; i < ii; i++) {
-        var date = Date.parse(r[i].datetime);
-        if (((dateNow - date) / 86400000) < 3) {
-            var lat = parseFloat(r[i].lat);
-            var lon = parseFloat(r[i].lon);
-            var alt = parseFloat(r[i].alt);
-
-            if(lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
-
-            var r_index = $.inArray(r[i].serial, recovery_names);
-
-            if(r_index == -1) {
-                recovery_names.push(r[i].serial);
-                r_index = recovery_names.length - 1;
-                recoveries[r_index] = {marker: null, infobox: null};
-            }
-
-            _recovered_text = r[i].recovered ? " Recovered by " : " Not Recovered by ";
-
-            // Override text is planned field exists and is true
-            if(r[i].hasOwnProperty('planned')){
-              if(r[i].planned == true){
-                  _recovered_text = " Recovery Planned by ";
-              }
-            }
-
-            html += "<div style='line-height:16px;position:relative;'>";
-            html += "<div><b><u>"+$('<span>').text(r[i].serial+(_recovered_text)+r[i].recovered_by).html()+"</u></b></div>";
-            html += "<div style='margin-bottom:5px;'><b><button style='margin-bottom:0px;' onclick='panToRecovery(\"" + r[i].serial + "\")'><i class='icon-location'></i></button>&nbsp;</b>"+format_coordinates(lat, lon, r[i].serial)+"</div>";
-    
-            var imp = offline.get('opt_imperial');
-            var text_alt      = Number((imp) ? Math.floor(3.2808399 * parseInt(alt)) : parseInt(alt)).toLocaleString("us");
-            text_alt     += "&nbsp;" + ((imp) ? 'ft':'m');
-    
-            html += "<div><b>Time:&nbsp;</b>"+formatDate(stringToDateUTC(r[i].datetime))+"</div>";
-            html += "<div><b>Reported by:&nbsp;</b>"+$('<span>').text(r[i].recovered_by).html()+"</div>";
-            html += "<div><b>Notes:&nbsp;</b>"+$('<div>').text(r[i].description).html()+"</div>";
-            html += "<div><b>Flight Path:&nbsp;</b><a href=\"javascript:showRecoveredMap('" + r[i].serial + "')\">"+r[i].serial+"</a></div>";
-            html += "<hr style='margin:5px 0px'>";
-            html += "</div>";
-        }
-    }
-
-    if (html == "") {
-        html = "<div>No recent recoveries :-(</div>"
-    }
-
-    $("#recovery-list").html(html);
-
 }
 
-function updateLeaderboardPane(r){
-    if(!r) return;
-
-    html = "";
-    var recovered = r.recovered;
-    var total = r.total;
-    var hunters = r.chaser_count;
-    var top = r.top_chasers;
-
-    // create a sorted list
-    top = Object.keys(top).map(function(key){return [key, top[key]]});
-    top.sort(function(a, b) {
-        return b[1] - a[1];
-    });
-
-    html += "<div><b>Total sondes recovered: " + recovered + "/" + total + "</b></div>";
-    html += "<div><b>Total hunters: " + hunters + "</b></div><br>";
-    html += "<div><b>Leaderboard: </b></div>";
-
-    var i = 1;
-    for (let chaser in top) {
-        if (top.hasOwnProperty(chaser)) {
-            html += "<div><b>" + parseInt(i) + ". </b>" + top[chaser][0] + " - " + top[chaser][1] + "</div>";
-            i+=1;
-         }
-    }
-
-    if (r.length == 0) {
-        html = "<div>Error :-(</div>"
-    }
-
-    $("#leaderboard-list").html(html);
-
-}
-
-function updateLaunchPredictions(r) {
+function updateLaunchPredictions(r) { // Only in Professional
     for (serial in r) {
         prediction = r[serial];
         if(vehicles.hasOwnProperty(serial)) {
@@ -5038,17 +5363,16 @@ function updatePredictions(r) {
     var i = 0, ii = r.length;
     for(; i < ii; i++) {
         var vcallsign = r[i].vehicle;
-
-        if(vcallsign == "XX") continue;
-
+        
 		if(vehicles.hasOwnProperty(vcallsign)) {
-        	var vehicle = vehicles[vcallsign];
-			if(vehicle.prediction && vehicle.prediction.time == r[i].time) continue;
-			vehicle.prediction = r[i];
-			vehicle.prediction.data = $.parseJSON(r[i].data);
+            var vehicle = vehicles[vcallsign];
+
+            if(vehicle.prediction && vehicle.prediction.time == r[i].time) continue;
+            vehicle.prediction = r[i];
+            vehicle.prediction.data = $.parseJSON(r[i].data);
 
             // Figure out local ground level.
-            if(vehicle.prediction.data.length >= 2){
+            if(vehicle.prediction.data.length >= 2 && vehicle.prediction.descent_rate){
                 vehicle.local_ground_asl = vehicle.prediction.data[vehicle.prediction.data.length-1]['alt'];
             } else {
                 vehicle.local_ground_asl = 0;
@@ -5060,8 +5384,8 @@ function updatePredictions(r) {
             } else {
                 continue;
             }
-
-			
+        
+            
 	    }
 	}
 }
@@ -5077,15 +5401,23 @@ function refreshUI() {
 function hideHorizonRings(){
     for(var vcallsign in vehicles) {
         if(vehicles[vcallsign].vehicle_type == "balloon"){
-            map.removeLayer(vehicles[vcallsign].horizon_circle);
-            map.removeLayer(vehicles[vcallsign].subhorizon_circle);
-            map.removeLayer(vehicles[vcallsign].horizon_circle_title);
-            map.removeLayer(vehicles[vcallsign].subhorizon_circle_title);
+            if (vehicles[vcallsign].horizon_circle){
+                map.removeLayer(vehicles[vcallsign].horizon_circle);
+            }
+            if (vehicles[vcallsign].subhorizon_circle){
+                map.removeLayer(vehicles[vcallsign].subhorizon_circle);
+            }
+            if (vehicles[vcallsign].horizon_circle_title) {
+                map.removeLayer(vehicles[vcallsign].horizon_circle_title);
+            }
+            if (vehicles[vcallsign].subhorizon_circle_title){
+                map.removeLayer(vehicles[vcallsign].subhorizon_circle_title);
+            }
         }
     }
 }
 
-function updateHorizonVisibility(){
+function updateHorizonVisibility(){ // Only in Professional
     // Only show horizon rings for the sonde we are currently 'following'
     // (the last selected sonde)
     hideHorizonRings();
@@ -5102,6 +5434,22 @@ function updateHorizonVisibility(){
     map.addLayer(vehicles[follow_vehicle].subhorizon_circle_title);
 }
 
+function showHorizonRings(){ // Only in Amateur
+    for(var vcallsign in vehicles) {
+        if(vehicles[vcallsign].vehicle_type == "balloon" && (!isVehicleFiltered(vcallsign))){
+            map.addLayer(vehicles[vcallsign].horizon_circle);
+            map.addLayer(vehicles[vcallsign].subhorizon_circle);
+            map.addLayer(vehicles[vcallsign].horizon_circle_title);
+            map.addLayer(vehicles[vcallsign].subhorizon_circle_title);
+        } else if ( vehicles[vcallsign].vehicle_type == "balloon" ) {
+            if (vehicles[vcallsign].horizon_circle) map.removeLayer(vehicles[vcallsign].horizon_circle);
+            if (vehicles[vcallsign].subhorizon_circle) map.removeLayer(vehicles[vcallsign].subhorizon_circle);
+            if (vehicles[vcallsign].horizon_circle_title) map.removeLayer(vehicles[vcallsign].horizon_circle_title);
+            if (vehicles[vcallsign].subhorizon_circle_title) map.removeLayer(vehicles[vcallsign].subhorizon_circle_title);
+        }
+    }
+}
+
 function hideTitles(){
     for(var vcallsign in vehicles) {
         if(vehicles[vcallsign].vehicle_type == "balloon" || vehicles[vcallsign].vehicle_type == "car"){
@@ -5113,7 +5461,7 @@ function hideTitles(){
 function showTitles(){
     for(var vcallsign in vehicles) {
         if(vehicles[vcallsign].vehicle_type == "balloon" || vehicles[vcallsign].vehicle_type == "car"){
-            vehicles[vcallsign].title = vehicles[vcallsign].marker.bindTooltip(vehicles[vcallsign]["marker"]["options"]["title"], {direction: 'center', permanent: 'false', className: 'serialtooltip'});
+            vehicles[vcallsign].title = vehicles[vcallsign].marker.bindTooltip(vehicles[vcallsign]["marker"]["options"]["title"], {direction: 'center', permanent: 'false', className: 'serialtooltip'}); // Amateur = Permanent: 'true';
         }
     }
 }
@@ -5135,17 +5483,7 @@ function update(response, none) {
 
         return;
     }
-
-    if (sondePrefix.indexOf(wvar.query) > -1) {
-        for (var i = response.positions.position.length - 1; i >= 0; i--) {
-            try {
-                if (!response.positions.position[i].type.includes(wvar.query)) {
-                    response.positions.position.splice(i, 1)
-                }
-            } catch (e) {}
-        }
-    }
-
+    
     ssdv = (!response.ssdv) ? {} : response.ssdv;
 
     // create a dummy response object for postions
@@ -5206,7 +5544,6 @@ function update(response, none) {
                     // remember last position for each vehicle
                     ctx.lastPPointer.push(vehicle.curr_position);
 
-                    if(listScroll) listScroll.refresh();
                     if(zoomed_in && follow_vehicle == vcallsign && !manual_pan) panTo(follow_vehicle);
                     if (follow_vehicle == vcallsign) {
                         update_lookangles(follow_vehicle);
@@ -5229,13 +5566,12 @@ function update(response, none) {
 
             }
 
-            //if(periodical_predictions === null) refreshPredictions();
         },
 
     };
-    document.getElementById("spinner")?.remove();
+    document.getElementById("spinner")?.remove(); // Professional Only
     ctx_init.run(ctx_init);
-    sub_to_nearby_sondes();
+    sub_to_nearby_sondes(); // Professional Only
 }
 
 function zoom_on_payload() {
@@ -5290,14 +5626,13 @@ function zoom_on_payload() {
 
     // pan and follow the vehicle
     followVehicle(vcallsign, !wvar.zoom, true);
-    focusVehicle(vcallsign);
+    focusVehicle(vcallsign); // Professional ONly
 
     // expand list element
     $('.vehicle'+target.uuid).addClass('active');
 
     // scroll list to the expanded element
-    listScroll.refresh();
-    listScroll.scrollToElement('.portrait .vehicle'+target.uuid, 0);
+    $('.vehicle'+target.uuid)[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
 
     zoomed_in = true;
 }

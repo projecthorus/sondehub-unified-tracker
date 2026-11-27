@@ -1,5 +1,5 @@
 {
-  "name": "SondeHub Tracker",
+  "name": "{TYPE_NAME}",
   "short_name": "SondeHub",
   "description": "A webapp for tracking radiosondes.",
   "theme_color": "#00a3d3",

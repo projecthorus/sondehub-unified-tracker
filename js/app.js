@@ -6,6 +6,15 @@ var is_mobile = false;
 // hash url
 var history_supported = (typeof history !== 'undefined');
 
+var searchbox = document.querySelector("header .search input[type='text']");
+
+if (isProfessional()) {
+    searchbox.setAttribute("placeholder", "Sonde Serial");
+}
+else if (isAmateur()) {
+    searchbox.setAttribute("placeholder", "Callsign");
+}
+
 function lhash_update(history_step) {
     history_step = !!history_step;
 
@@ -40,11 +49,21 @@ function lhash_update(history_step) {
         hash += "&nyan=1";
     }
 
+    // If Index Colouring is disabled, and it's Amateur
+    // If Index Colouring is enbaled, and it's Professional
+    if(!wvar.indexColouring === !!isAmateur()) {
+        hash += `&indexColouring=${wvar.indexColouring ? 1: 0}`;
+    }
     if(wvar.nena) {
         hash += "&nena=1";
     }
+
     if(wvar.box) { // We just need something to change so we can trigger the back button correctly
         hash += "&box="+wvar.box;
+    }
+    // Amateur Only
+    if (document.getElementById("modulationfilter").value != "all"){
+        hash += "&mo=" + document.getElementById("modulationfilter").value;
     }
 
     hash = encodeURI(hash);
@@ -71,8 +90,9 @@ var wvar = {
     zoom: true,
     query: "",
     nyan: false,
-    nena: false,
     site: 0,
+    indexColouring: isAmateur(),
+    nena: false,
     box: ""
 };
 
@@ -96,6 +116,7 @@ function load_hash(no_refresh) {
         focus: "",
         query: "",
         nyan: false,
+        indexColouring: isAmateur(),
         nena: false,
         box: ""
     };
@@ -107,14 +128,14 @@ function load_hash(no_refresh) {
 
         switch(k) {
             case "mt":
-                if( baseMaps.hasOwnProperty(v) && map) {
+                if(map && baseMaps.hasOwnProperty(v)) {
                     map.removeLayer(baseMaps[selectedLayer]);
                     selectedLayer = v;
                     map.addLayer(baseMaps[v]);
                 }
                 break;
             case "mz":
-                if (map){
+                if (map) {
                     map.setZoom(parseInt(v));
                 }
                 break;
@@ -123,49 +144,63 @@ function load_hash(no_refresh) {
                 manual_pan = true;
                 v = v.split(',');
                 var latlng = new L.LatLng(v[0], v[1]);
-                if (map){
+                if (map) {
                     map.panTo(latlng);
                 }
                 break;
             case "f":
-                v = v.toUpperCase();
+                if (isProfessional()) {
+                    v = v.toUpperCase();
+                }
                 refocus = (follow_vehicle != v);
                 follow_vehicle = v;
                 def.focus = v;
                 break;
             case "qm":
-                def.mode = v.replace(/_/g, ' ');
-                if(modeList.indexOf(def.mode) == -1) def.mode = (is_mobile) ? modeDefaultMobile : modeDefault;
+                def.mode = setTimePeriod(v.replace(/_/g, ' '));
                 break;
             case "q":
-                v = v.toUpperCase();
+                if (isProfessional()) {
+                    v = v.toUpperCase();
+                }
                 def.query = v;
                 $("header .search input[type='text']").val(v);
                 break;
             case "nyan":
                 def[k] = !!parseInt(v);
                 break;
-            case "nena":
-                def[k] = !!parseInt(v);
-                break;
             case "site":
                 focusID = v;
                 gotoSite(v);
                 break;
-            case "box":
+            case "box": // Professional Only
                 def[k] = v;
+                break;
+            case "nena":
+                def[k] = !!parseInt(v);
+                break;
+            case "indexColouring":
+                def[k] = !!parseInt(v);
+                break;
+            // Amateur Only
+            case "mo":
+                modulationFilterElement = document.getElementById("modulationfilter")
+                // load_hash gets called a number of times, including in "callBack", so I can skip setting the modulation filter element if it's null
+                if (modulationFilterElement !== null) {
+                    document.getElementById("modulationfilter").value = v;
+                    sidebar_update();
+                }
                 break;
         }
     });
 
     // check if we should force refresh
-    ['mode','query','nyan','nena'].forEach(function(k) {
+    ['mode','query','nyan','nena','indexColouring'].forEach(function(k) {
         if(wvar[k] != def[k]) refresh = true;
     });
 
-
-
     $.extend(true, wvar, def);
+    // Map condition and nested if statements only in professional
     if(map){
         if (!def["box"]){
             $(".flatpage").hide()
@@ -173,9 +208,9 @@ function load_hash(no_refresh) {
             $(".flatpage").hide()
             $("#"+def["box"]).show()
         }
-        checkSize();
-        wvar["box"]= def["box"];
-
+        checkSize(); // Professional Only 
+        wvar["box"] = def["box"];
+    
         // force refresh
         if(!no_refresh) {
         if(refresh) {
@@ -204,43 +239,50 @@ for(var idx in params) {
         case "embed":
             if(line[1] == "1") {
                 wvar.enabled = true;
-                if(!is_mobile) wvar.mode = 'All';
+                // if(!is_mobile) wvar.mode = '3d'; // Amateur
+                if(!is_mobile) wvar.mode = 'All'; // Professional
             }
             break;
         case "hidelist": if(line[1] == "1") wvar.vlist = false; break;
         case "hidegraph": if(line[1] == "1") wvar.graph = false; break;
         case "expandgraph": if(line[1] == "1") wvar.graph_expanded = true; break;
         case "filter":
-            wvar.query = decodeURIComponent(line[1]);
+            wvar.query = decodeURIComponent(line[1]).replace(/;/g,",");
             $("header .search input[type='text']").val(wvar.query);
             break;
         case "nyan": wvar.nyan = true; break;
-        case "nena": wvar.nena = true; break;
         case "focus": wvar.focus = decodeURIComponent(line[1]); break;
         case "docid": wvar.docid = line[1]; break;
         case "mode": wvar.mode = decodeURIComponent(line[1]); break;
+        case "nena": wvar.nena = true; break;
+        case "indexColouring": 
+            wvar.indexColouring = line[1] == "1";
+            break;
     }
 }
 
 // loads the tracker interface
 function trackerInit() {
     // update current position if we geolocation is available
-    if(currentPosition) updateCurrentPosition(currentPosition.lat, currentPosition.lon);
+    if(currentPosition) {
+        updateCurrentPosition(currentPosition.lat, currentPosition.lon); 
+    }
 
-    
-    
     if (currentPosition && manual_pan == false){
         coords = [currentPosition.lat, currentPosition.lon]
         zoomLevel = 9;
         map.setView(coords, zoomLevel, {animate: false});
     }
-    $('#loading,#settingsbox,#aboutbox,#chasebox').hide(); // welcome screen
+
+
+    $('#loading,#settingsbox,#aboutbox,#embedbox,#chasebox').hide(); // welcome screen //embedbox only in amateur
     $('header,#main').show(); // interface elements
     checkSize();
 
     // if we there is enough screen space open aboutbox on startup
-    if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) $('.nav li.about').click();
-
+    if(!is_mobile && !offline.get('opt_nowelcome') && $(window).width() > 900) {
+        $('.nav li[function=about]').click(); 
+    }
 
     if(is_mobile || wvar.enabled) $(".nav .wvar").hide();
 
@@ -252,13 +294,14 @@ function trackerInit() {
 
         return;
     }
-    lhash_update(true);
+    
+    lhash_update(true); // Professional Only
+
 }
 
 // load the app after a 3s timeout
 var initTimer = setTimeout(trackerInit, 3000);
 
-var listScroll;
 var GPS_ts = null;
 var GPS_lat = null;
 var GPS_lon = null;
@@ -290,12 +333,8 @@ function checkSize() {
     ph = 0;
 
     if(w > 900 && $('.flatpage:visible').length) {
-        $('.flatpage').addClass('topanel');
         ph = $('.flatpage:visible').width()+30;
-    } else {
-        $('.flatpage.topanel').removeClass('topanel');
     }
-
     $("#mapscreen,.flatpage").height(h-hh-5);
 
     sw = (wvar.vlist) ? 260 : 0;
@@ -334,12 +373,11 @@ window.onchangeorientation = checkSize;
 
 
 // functions
-
 function positionUpdateError(error) {
     switch(error.code)
     {
         case error.PERMISSION_DENIED:
-            $('#sw_chasecar').removeClass('on').addClass('off');
+            $('#sw_chasecar').removeClass('on').addClass('off'); // Professional only
             break;
         default:
         break;
@@ -409,7 +447,6 @@ var positionUpdateHandle = function(position) {
         }
     }
 
-
     // add/update marker on the map (sondehub.js)
     updateCurrentPosition(lat, lon);
 
@@ -429,8 +466,6 @@ var positionUpdateHandle = function(position) {
     $('#cc_alt').text(alt + " m");
     $('#cc_accuracy').text(accuracy + " m");
     $('#cc_speed').text(speed + " m/s");
-        
-
 };
 
 var twoZeroPad = function(n) {
@@ -479,8 +514,9 @@ var format_time_friendly = function(start, end) {
 };
 
 var format_coordinates = function(lat, lon, name) {
-    var coords_text;
     var ua =  navigator.userAgent.toLowerCase();
+
+    // Professional
     var span = document.createElement('span')
     var a = document.createElement("a")
     span.appendChild(a)
@@ -529,21 +565,6 @@ $(window).ready(function() {
     // resize elements if needed
     checkSize();
 
-    // add inline scroll to vehicle list
-    listScroll = new IScroll('#main', {
-        hScrollbar: false,
-        hScroll: false,
-        snap: false,
-        mouseWheel: true,
-        scrollbars: true,
-        scrollbarClass: 'scrollStyle',
-        shrinkScrollbars: 'scale',
-        tap: true,
-        click: true,
-        disableMouse: false,
-        disableTouch: false,
-        disablePointer: false,
-    });
 
     $('#telemetry_graph').on('click', '.graph_label', function() {
         var e = $(this), h;
@@ -586,6 +607,23 @@ $(window).ready(function() {
         }
     });
 
+    // Amateur only
+    $("#main").on('click','.row .data .sbutton.hysplit', function(event) {
+        event.stopPropagation();
+
+        var elm = $(this);
+        var name = elm.attr('data-vcallsign');
+
+        if(elm.hasClass("active")) {
+            elm.removeClass('active');
+            processHysplit(name, false);
+        }
+        else {
+            elm.addClass('active');
+            processHysplit(name, true);
+        }
+    });
+
     // reset nite-overlay and timebox when mouse goes out of the graph box
     $("#telemetry_graph").on('mouseout','.holder', function() {
         if(plot_crosshair_locked) return;
@@ -616,7 +654,6 @@ $(window).ready(function() {
             e.removeClass('active');
             e.find('.data').hide();
 
-            listScroll.refresh();
 
             // disable following only we are collapsing the followed vehicle
             if(follow_vehicle !== null && follow_vehicle == e.attr('data-vcallsign')) {
@@ -627,12 +664,11 @@ $(window).ready(function() {
             e.addClass('active');
             e.find('.data').show();
 
-            listScroll.refresh();
 
             // auto scroll when expanding an item
             if($('.portrait:visible').length) {
                 var eName = "." + e.parent().attr('class') + " ." + e.attr('class').match(/vehicle\d+/)[0];
-                listScroll.scrollToElement(eName);
+                $(eName)[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
             }
 
             // pan to selected vehicle
@@ -644,36 +680,16 @@ $(window).ready(function() {
     $('.nav')
     .on('click', 'li', function() {
         var e = $(this);
-        var name = e.attr('class').replace(" last","");
+        var name = e.attr('function');
 
         // makes the menu buttons act like a switch
-        if($("#"+name+"box").is(':visible')) name = 'home';
-
         var box = $("#"+name+"box");
-
-        if(box.is(':hidden')) {
-            $('.flatpage, #homebox').hide();
+        if (box.is(':visible')){
+            box.hide();
+        }
+        else {
+            $('.flatpage').hide();
             box.show().scrollTop(0);
-
-            // if(name == 'about' && !$('#motd').hasClass('inited')) {
-            //     $('#motd').addClass('inited');
-
-            //     $.getJSON("//spacenear.us/tracker/datanew.php?type=info", function(data) {
-            //         if('html' in data) $('#motd').html(data.html.replace(/\\/g,''));
-            //     });
-
-            //     var iframe = box.find('iframe');
-            //     var src = iframe.attr('data-src');
-            //     iframe.attr('src', src);
-            // }
-
-            // analytics
-            var pretty_name;
-            switch(name) {
-                case "home": pretty_name = "Map"; break;
-                case "chasecar": pretty_name = "Chase Car"; break;
-                default: pretty_name = name[0].toUpperCase() + name.slice(1);
-            }
         }
         var visible_box = $(".flatpage:visible");
         if (visible_box.length > 0){
@@ -683,6 +699,7 @@ $(window).ready(function() {
         }
 
         lhash_update(true);
+    
         checkSize();
     });
 
@@ -730,69 +747,17 @@ $(window).ready(function() {
         }
     });
 
-    // Functions for the payload recovery feature
-    // Logic to switch the recovery OK button
-    $("#sw_recovery_ok").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-            // Remove any planned recovery check.
-            $("#sw_recovery_planned").removeClass('on').addClass('off');
-        }
-    });
-    // Logic to switch the recovery Planned button
-    $("#sw_recovery_planned").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-            // Set recovery OK to false.
-            $("#sw_recovery_ok").removeClass('on').addClass('off');
-        }
-    });
-    // Logic to switch the use car position button
-    $("#sw_use_car_pos").click(function() {
-        var e = $(this);
-
-        // turning the switch off
-        if(e.hasClass('on')) {
-            e.removeClass('on').addClass('off');
-        // turning the switch on
-        } else {
-            e.removeClass('off').addClass('on');
-        }
-    });
-
+// Chase Car
     // remember callsign as a cookie
     $("#cc_callsign").on('change keyup', function() {
         callsign = $(this).val().trim();
         offline.set('callsign', callsign); // put in localStorage
         CHASE_listenerSent = false;
-        $('#recovery_callsign').val(callsign);
     });
-
-    $("#recovery_callsign").on('change keyup', function() {
-        callsign = $(this).val().trim();
-        offline.set('callsign', callsign); // put in localStorage
-        CHASE_listenerSent = false;
-        $('#cc_callsign').val(callsign);
-    });
-
 
     // load value from localStorage
     callsign = offline.get('callsign');
     $('#cc_callsign').val(callsign);
-    $('#recovery_callsign').val(callsign);
 
     // settings page
 
@@ -805,15 +770,21 @@ $(window).ready(function() {
         "#sw_haxis_hours",
         "#sw_daylight",
         "#sw_hide_receivers",
-        "#sw_hide_recoveries",
         "#sw_hide_chase",
         "#sw_hide_timebox",
         "#sw_hilight_vehicle",
         '#sw_hide_titles',
-        '#sw_layers_launches',
         '#sw_selective_sidebar',
         "#sw_nowelcome",
         "#sw_interpolate",
+        // Amateur Only Options
+        '#sw_hide_horizon',
+        '#sw_show_aprs',
+        '#sw_show_testing',
+        "#sw_float_wide",
+        // Professional Only Options
+        "#sw_hide_recoveries",
+        '#sw_layers_launches',
     ];
 
     // applies functionality when switches are toggled
@@ -839,7 +810,7 @@ $(window).ready(function() {
                 if(on) focusVehicle(follow_vehicle);
                 else focusVehicle(null, true);
                 break;
-            case "opt_imperial":
+            case "opt_imperial": // Professional Only
                 if (map_scale){
                     map_scale.remove()
                 }
@@ -851,25 +822,26 @@ $(window).ready(function() {
                     map_scale = L.control.scale({position:'bottomright', imperial:false}).addTo(map);
                 }
                 zoom_controls.addTo(map);
-
             case "opt_haxis_hours":
                 refreshUI();
                 break;
             case "opt_daylight":
                 if(on) { 
                     nite.addTo(map);
-                    niteupdate = setInterval(function() {
-                        nite.setTime();
-                    }, 60000); // Every minute
+                    startNiteUpdate(); // Amatuer
+                    // Professional
+                    // niteupdate = setInterval(function() {
+                    //     nite.setTime();
+                    // }, 60000); // Every minute
                 } else { 
                     nite.remove();
-                    clearInterval(nite);
+                    stopNiteUpdate(); // Amateur
+                    // clearInterval(nite); // Professional
                 }
                 break;
             case "opt_hide_receivers":
                 if(on) {
                     updateReceivers([],single=false);
-                    //clearTimeout(periodical_listeners);
                     receiversHidden = true;
                 }
                 else {
@@ -877,10 +849,9 @@ $(window).ready(function() {
                     refreshReceivers();
                 }
                 break;
-            case "opt_hide_recoveries":
+            case "opt_hide_recoveries": // Recoveries only used in Professional
                     if(on) {
                         updateRecoveries([]);
-                        clearTimeout(periodical_recoveries);
                     }
                     else {
                         refreshRecoveries();
@@ -889,7 +860,6 @@ $(window).ready(function() {
             case "opt_hide_chase":
                 if(on) {
                     chaseCarsHidden = true;
-                    //clearTimeout(periodical_listeners);
                     deleteChase();
                 } else {
                     chaseCarsHidden = false;
@@ -904,6 +874,14 @@ $(window).ready(function() {
                 } else {
                     elm.addClass('present').show();
                     $('#lookanglesbox').css({top:'40px'});
+                }
+                break;
+            case "opt_hide_horizon":
+                if(on) {
+                    showHorizonRings();
+                }
+                else {
+                    hideHorizonRings();
                 }
                 break;
             case "opt_hide_titles":
@@ -921,12 +899,18 @@ $(window).ready(function() {
             case "opt_selective_sidebar":
                 sidebar_update();
                 break;
-            case "opt_layers_launches":
+            case "opt_layers_launches": // Only used in Professional
                 if(on) {
                     map.removeLayer(launches);
                 } else {
                     map.addLayer(launches);
                 }
+                break;
+            case "opt_show_aprs": // Only used in Amateur
+                clean_refresh(wvar.mode, true, false);
+                break;
+            case "opt_show_testing": // Only used in Amateur
+                clean_refresh(wvar.mode, true, false);
                 break;
             case "opt_interpolate":
                 if(on) { graph_gap_size = graph_gap_size_max; }
@@ -951,15 +935,15 @@ $(window).ready(function() {
     if(navigator.geolocation) {
         // if we have geolocation services, show the locate me button
         // the button pans the map to the user current location
-        //if(is_mobile && !wvar.enabled) $(".chasecar").show();
+        //if(is_mobile && !wvar.enabled) $("[function=chasecar]").show();
         // Enable the chase-car option for all browsers, not just mobile ones.
-        $(".chasecar").show();
+        $("[function=chasecar]").show();
         $("#locate-me,#app_name").attr('style','').click(function() {
             if(currentPosition) {
                 // disable following of vehicles
                 stopFollow();
                 // open map
-                $('.nav .home').click();
+                $('.nav [function=home]').click();
                 // pan map to our current location
                 map.panTo(new L.LatLng(currentPosition.lat, currentPosition.lon));
             } else {
@@ -968,7 +952,10 @@ $(window).ready(function() {
         });
 
         navigator.geolocation.getCurrentPosition(positionUpdateHandle);
-        if(navigator.geolocation) navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
+
+        if(navigator.geolocation){
+            navigator.geolocation.watchPosition(positionUpdateHandle, positionUpdateError);
+        }
     }
 
     // weather feature
@@ -979,7 +966,7 @@ $(window).ready(function() {
             ['rainviewer', 'RainViewer'],
             ['rainviewer-coverage', 'RainViewer Coverage'],
         ]],
-        ['North America', [
+        ['North America', [ // Only in Professional
             ['nexrad-n0q-900913', 'NEXRAD Base Reflectivity'],
             ['goes-ir-4km-900913', 'GOES NA Infrared ~4km'],
             ['goes-wv-4km-900913', 'GOES NA Water Vapor ~4km'],
@@ -1067,7 +1054,11 @@ $(window).ready(function() {
    $("header .search form").on('submit', function(e) {
        e.preventDefault();
 
-       var text = $("header .search input[type='text']").val().toUpperCase();
+    // Combined both
+       var text = $("header .search input[type='text']").val().replace(/;/g,",");
+       if (isProfessional()) {
+            text = text.toUpperCase();
+       }
        $("header .search input[type='text']")[0].value = text; // update field in case it wasn't already uppercase
 
        if(text === wvar.query) return;
@@ -1083,16 +1074,12 @@ $(window).ready(function() {
         wvar.zoom = true;
        }
 
-       // Insert the serial number into the recovery reporting serial number textbox
-       $("#pr_serial").val(text);
-
        clean_refresh(wvar.mode, true, true);
    });
 });
 
-
-function check_version(){
-    const updateRequest = new Request("/js/version.json");
+function check_version(){ // Professional Only
+    const updateRequest = new Request("js/version.json");
     fetch(updateRequest)
         .then(function(response){ return response.json()})
         .then(function(response){
@@ -1112,12 +1099,12 @@ function check_version(){
             }
         })
 }
-function update_site(){
+function update_site(){ // Professional Only
 
     window.location.reload(true)
 }
 
-function check_banner(){
+function check_banner(){ // Professional Only
     const bannerRequest = new Request("https://api.v2.sondehub.org/banner");
     fetch(bannerRequest)
         .then(function(response){ return response.json()})
@@ -1130,7 +1117,7 @@ function check_banner(){
         })
 }
 
-function update_countdown(){
+function update_countdown(){ // Professional Only
     var date = new Date(0);
     time_remaining = (reload_end_time - new Date().getTime())/1000
     date.setSeconds(time_remaining);
@@ -1138,9 +1125,9 @@ function update_countdown(){
     document.getElementById("reload_timer").innerText = timeString;
 }
 
-check_version()
-check_banner()
-update_check = setInterval(check_version, 15 * 60 * 1000)
-load_hash();
+check_version(); // Professional Only
+check_banner(); // Professional Only
+update_check = setInterval(check_version, 15 * 60 * 1000) // Professional Only
+load_hash(); // Professional Only
 startAjax();
-load();
+load(); // Professional Only

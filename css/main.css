@@ -2,6 +2,15 @@
  * Main style sheet
  *
  */
+
+body[sondehub-type="PROFESSIONAL"] .amateur-element {
+    display: none;
+}
+
+body[sondehub-type="AMATEUR"] .professional-element {
+    display: none;
+}
+
 @font-face {
   font-family: 'Roboto';
   font-style: normal;
@@ -39,25 +48,6 @@ body {
 }
 .lfloat {
     float: left;
-}
-
-.iScrollVerticalScrollbar {
-    z-index: 49;
-    width: 5px;
-    bottom: 6px;
-    top: 6px;
-    left: 1px;
-    position: absolute;
-}
-
-.iScrollVerticalScrollbar > div {
-    position: absolute;
-    background: none repeat scroll 0 0 padding-box rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 3px 3px 3px 3px;
-    position: absolute;
-    width: 100%;
-    z-index: 49;
 }
 
 .slickbox {
@@ -99,13 +89,13 @@ body {
 #timebox {
     top: 7px;
     right: 5px;
-    width: 205px;
+    width: 205px; /* Professional */
 }
 
 #lookanglesbox {
     top: 40px;
     right: 5px;
-    width: 205px;
+    width: 205px; /* Professional */
 }
 
 #timebox.past svg path {
@@ -146,7 +136,7 @@ body {
 
 #loading {
     position: absolute;
-    z-index: 99;
+    z-index: 100;
     width: 100%;
     height: 100%;
     background: #00A3D3;
@@ -392,10 +382,10 @@ header .search form input[type='submit'] {
     position: relative;
 }
 #main .row .header {
- }
+}
 #main .row .data {
     display: none;
-    width: 100%;
+    width: calc(100% - 5px);
     border-left: 5px solid #F4F4F4;
 }
 
@@ -405,18 +395,20 @@ header .search form input[type='submit'] {
 #main .row.follow .icon-target:before {
     display: inline-block;
 }
-#main .row.active .data { display: inline-block; }
+#main .row.active .data { 
+    display: inline-block; 
+    min-height: 190px; /* Amateur */
+}
 #main .row .data .left,
+#main .row .data .buttons,
 #main .row .data .right {
     position: relative;
     z-index: 4;
 }
-#main .row .data .vbutton {
-    position: absolute;
+#main .row .data .vbutton,
+#main .row .data .sbutton {
     background-color: #fff;
     width: 30px !important;
-    right: 5px;
-    top: 150px;
     padding-left: 3px;
     padding-right: 3px;
     font-size: 10px;
@@ -427,20 +419,10 @@ header .search form input[type='submit'] {
     text-align: center;
 }
 
-#main .row .data .sbutton {
-    position: absolute;
-    background-color: #fff;
-    width: 30px !important;
-    right: 5px;
-    top: 170px;
-    padding-left: 3px;
-    padding-right: 3px;
-    font-size: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    z-index: 5;
-    text-align: center;
+#main .row .data .sbutton.active { /* Amateur */
+    background-color: #33b5e5;
+    border: 1px solid #33b5e5;
+    color: #fff;
 }
 
 #main .row .data .vbutton.active {
@@ -454,9 +436,7 @@ header .search form input[type='submit'] {
 }
 
 #main .row .data img {
-    position: absolute;
     z-index: 2;
-    right: 35%;
     opacity: 0.6;
     width: 46px;
     height: 84px;
@@ -501,20 +481,8 @@ header .search form input[type='submit'] {
     overflow: auto;
     position: absolute;
     width: 100%;
-    z-index: 100;
+    z-index: 90;
     background: #fff;
-}
-
-.topanel {
-    float: right;
-    position: relative;
-    width: auto;
-    padding: 0;
-    padding-left: 10px;
-    padding-right: 20px;
-    box-shadow: 2px 0px 8px 0px #555;
-    overflow-x: hidden;
-    z-index: 3;
 }
 
 .flatpage p {
@@ -742,10 +710,6 @@ header .search form input[type='submit'] {
     display: none;
 }
 
-.nav .home {
-    display: none;
-}
-
 .leaflet-tooltip.serialtooltip {
     background-color: transparent;
     border: 0px;
@@ -816,6 +780,17 @@ header .search form input[type='submit'] {
 }
 
 @media only screen and (min-width: 900px) {
+    .flatpage {
+        float: right;
+        position: relative;
+        width: auto;
+        padding: 0;
+        padding-left: 10px;
+        padding-right: 20px;
+        box-shadow: 2px 0px 8px 0px #555;
+        overflow-x: hidden;
+        z-index: 3;
+    }
 }
 
 @media only screen and (max-width: 600px) {
@@ -892,8 +867,21 @@ header .search form input[type='submit'] {
     }
     #main .data .left {
         float: left;
-        width: 80%;
-        padding-left: 5px;
+        width: calc(80% - 2px);
+        margin-left: 2px;
+    }
+    #main .data .buttons {
+        float: right;
+        width: calc(15% - 5px);
+        margin-top: 5px;
+        margin-right: 5px;
+    }
+    #main .row .data .vbutton,
+    #main .row .data .sbutton {
+        float: right;
+        margin-top: 4px;
+        margin-right: 4px;
+        margin-left: 4px;
     }
     #main .data dl > dt {
         color: #000;
@@ -910,8 +898,7 @@ header .search form input[type='submit'] {
         font-size: 11px;
     }
     #main .row .data img {
-        right: 5%;
-        top: 50px;
+        float: right;
     }
 }
 @media only screen and (max-width: 480px) {
@@ -930,6 +917,16 @@ header .search form input[type='submit'] {
         float: left;
         width: 55%;
         padding-left: 5px;
+    }
+    #main .row .data .vbutton,
+    #main .row .data .sbutton {
+        position: absolute;
+        right: 5px;
+        border: 1px solid #ccc;
+    }
+    #main .row .data img {
+        position: absolute;
+        right: 35%;
     }
     #main .data .right {
         float: right;
@@ -962,3 +959,28 @@ header .search form input[type='submit'] {
     }
 }
 
+/* Amateur */
+/* login button */
+#login_url {
+    display: block;
+    background-color: #33b5e5;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+}
+/* predictor settings pane */ 
+.ic-balloon { 
+    background-image: url("../glyphs/icon-balloon.svg");
+    background-repeat: no-repeat;
+    background-size: 50%;
+    background-position: center;
+  }
+
+/* scroll sidebar */
+.scrollwrapper {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+}
