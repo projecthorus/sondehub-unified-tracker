@@ -2226,13 +2226,15 @@ function updateVehicleInfo(vcallsign, newPosition) {
             '<canvas class="graph"></canvas>' +
             '<i class="arrow"></i></div>' +
             '<div class="data">' +
+            '<div class="buttons">' +
             '<img class="'+((vehicle.vehicle_type=="car")?'car':'')+'" src="'+image+'" />' +
-            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + ' style="top:'+(vehicle.image_src_size[1]+55)+'px">Path</span>' +
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+55)+'px">SkewT</span>' : '') +
-            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')" style="top:'+(vehicle.image_src_size[1]+85)+'px">Share</span>' : '') + 
-            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')" style="top:'+(vehicle.image_src_size[1]+115)+'px">Plots</span>' : '') + 
-            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '" style="top:'+(vehicle.image_src_size[1]+145)+'px">Float</span>' : '') +
-            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')" style="top:'+(vehicle.image_src_size[1]+145)+'px">Found</span>' : '') +
+            '<span class="amateur-element vbutton path '+((vehicle.polyline_visible) ? 'active' : '')+'" data-vcallsign="'+vcallsign+'"' + '>Path</span>' +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + skewt_url + encodeURIComponent(vcallsign) + '\')">SkewT</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="shareVehicle(\'' + vcallsign + '\')">Share</span>' : '') + 
+            ((vehicle.vehicle_type!="car") ? '<span class="sbutton" onclick="openURL(\'' + grafana_dashboard_url + '\')">Plots</span>' : '') + 
+            ((vehicle.vehicle_type!="car" && float_button_enabled) ? '<span class="amateur-element sbutton hysplit '+((vehicle.prediction_hysplit_visible) ? 'active' : '')+'" data-vcallsign="' + vcallsign + '"">Float</span>' : '') +
+            ((vehicle.vehicle_type!="car") ? '<span class="professional-element sbutton" onclick="openURL(\'' + recovery_url + encodeURIComponent(vcallsign) + '\')"">Found</span>' : '') +
+            '</div>' +
             '<div class="left">' +
             '<dl>';
   //mobile
